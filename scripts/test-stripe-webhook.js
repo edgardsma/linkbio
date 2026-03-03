@@ -5,8 +5,8 @@
  * node scripts/test-stripe-webhook.js
  */
 
-const Stripe = require('stripe')
-const dotenv = require('dotenv')
+import Stripe from 'stripe'
+import dotenv from 'dotenv'
 
 // Carregar variáveis de ambiente
 dotenv.config()

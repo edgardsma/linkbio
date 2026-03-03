@@ -1,4 +1,4 @@
-const prisma = require('../lib/prisma')
+import { prisma } from '../lib/prisma.js'
 
 async function main() {
   console.log('🎨 Criando usuário de teste com cores personalizadas...')

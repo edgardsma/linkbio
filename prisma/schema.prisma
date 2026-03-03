@@ -1,5 +1,5 @@
-// Este é o arquivo de schema do Prisma
-// Documentação: https://pris.ly/d/prisma-schema
+// Este e o arquivo de schema do Prisma
+// Documentacao: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -7,9 +7,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// Modelo de Usuário
+// Modelo de Usuario
 model User {
   id            String       @id @default(cuid())
   email         String       @unique

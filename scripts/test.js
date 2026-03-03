@@ -5,8 +5,8 @@
  * Executa testes automatizados para verificar o funcionamento do sistema
  */
 
-const prisma = require('../lib/prisma')
-const bcrypt = require('bcryptjs')
+import { prisma } from '../lib/prisma.js'
+import bcrypt from 'bcryptjs'
 
 // Cores para console
 const colors = {

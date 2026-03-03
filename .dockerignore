@@ -16,3 +16,9 @@ docs
 .vscode
 uploads
 *.log
+*.md
+scripts/test*.js
+public/uploads
+memory
+.claude
+*.jsonl

@@ -1,12 +1,12 @@
-import NextAuth from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
-import GitHubProvider from 'next-auth/providers/github'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import prisma from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
+const NextAuth = require('next-auth')
+const GoogleProvider = require('next-auth/providers/google')
+const GitHubProvider = require('next-auth/providers/github')
+const CredentialsProvider = require('next-auth/providers/credentials')
+const { PrismaAdapter } = require('@auth/prisma-adapter')
+const { prisma } = require('@/lib/prisma.js')
+const bcrypt = require('bcryptjs')
 
-const handler = NextAuth({
+const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -71,6 +71,8 @@ const handler = NextAuth({
       return session
     },
   },
-})
+}
 
-export { handler as GET, handler as POST }
+const handler = NextAuth(authOptions)
+
+module.exports = { GET: handler, POST: handler, authOptions }
