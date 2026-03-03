@@ -1,0 +1,157 @@
+// Este é o arquivo de schema do Prisma
+// Documentação: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Modelo de Usuário
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  emailVerified DateTime?
+  name          String?
+  username      String       @unique // Nome de usuário para o linkbio (ex: @usuario)
+  password      String?      // Senha (opcional para login OAuth)
+  image         String?      // Avatar do usuário
+  bio           String?      // Biografia do usuário
+  background    String?      // Imagem de fundo
+
+  // Personalização
+  primaryColor      String    @default("#667eea")    // Cor primária
+  secondaryColor   String    @default("#764ba2")   // Cor secundária
+  backgroundColor String    @default("#f9fafb")    // Cor de fundo
+  textColor        String    @default("#111827")    // Cor do texto
+  themeId          String?   @default("default")  // Tema selecionado
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relacionamentos
+  links         Link[]
+  subscription  Subscription?
+  sessions      Session[]
+  accounts      Account[]
+  theme         Theme?      @relation(fields: [themeId], references: [id])
+}
+
+// Modelo de Tema
+model Theme {
+  id               String    @id @default(cuid())
+  name             String    @unique
+  isPremium         Boolean   @default(false)
+  primaryColor      String
+  secondaryColor   String
+  backgroundColor String
+  textColor        String
+  description      String?
+  previewImage     String?
+  createdAt        DateTime  @default(now())
+
+  users            User[]
+}
+
+// Modelo de Link (links na página do linkbio)
+model Link {
+  id          String    @id @default(cuid())
+  title       String    // Título do link
+  url         String    // URL de destino
+  description String?   // Descrição opcional
+  icon        String?   // Ícone (emoji ou URL)
+  type        String    @default("url") // "url", "whatsapp", "email", "phone"
+  position    Int       // Ordem de exibição
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Estatísticas
+  clicks      Int       @default(0)
+  clickLogs   Click[]
+
+  // Relacionamento
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([position])
+}
+
+// Modelo de Click (registro de cada clique nos links)
+model Click {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Informações do dispositivo
+  userAgent String?
+  referrer  String?
+  country   String?
+  city      String?
+
+  // Relacionamento
+  linkId    String
+  link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([createdAt])
+}
+
+// Modelo de Assinatura (para planos premium)
+model Subscription {
+  id              String    @id @default(cuid())
+  status          String    // active, canceled, past_due, trialing
+  plan            String    // free, premium, pro
+  stripeCustomerId String?  // ID do cliente no Stripe
+  stripePriceId   String?   // ID do preço no Stripe
+  currentPeriodEnd DateTime? // Término do período atual
+  cancelAtPeriodEnd Boolean @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relacionamento
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Modelo para NextAuth (contas de terceiros)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// Modelo para NextAuth (sessões)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Modelo para NextAuth (tokens de verificação)
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

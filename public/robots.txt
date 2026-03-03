@@ -1,0 +1,10 @@
+# robots.txt para LinkBio Brasil
+
+User-agent: *
+Allow: /
+
+# Bloquear acesso a páginas de API
+Disallow: /api/
+
+# Sitemap (quando implementado)
+# Sitemap: https://seu-dominio.com/sitemap.xml
