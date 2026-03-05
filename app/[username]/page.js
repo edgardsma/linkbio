@@ -1,21 +1,19 @@
 import { prisma } from '@/lib/prisma.js'
 import { notFound } from 'next/navigation'
+import { getUserProfile, invalidateProfile } from '@/lib/redis'
+import { logger } from '@/lib/logger'
+import { getRequestId } from '@/lib/middleware'
 
 export default async function ProfilePage({ params }) {
+  const requestId = getRequestId()
   const { username } = await params
   const usernameClean = username.replace('@', '')
 
-  const user = await prisma.user.findUnique({
-    where: { username: usernameClean },
-    include: {
-      links: {
-        where: { isActive: true },
-        orderBy: { position: 'asc' },
-      },
-    },
-  })
+  // Usar cache do Redis para perfis públicos
+  const user = await getUserProfile(usernameClean)
 
   if (!user) {
+    logger.warn('Perfil não encontrado', { requestId, username: usernameClean })
     notFound()
   }
 
@@ -208,9 +206,9 @@ async function trackClick(linkId) {
 export async function generateMetadata({ params }) {
   const { username } = await params
   const usernameClean = username.replace('@', '')
-  const user = await prisma.user.findUnique({
-    where: { username: usernameClean },
-  })
+
+  // Usar cache para metadata também
+  const user = await getUserProfile(usernameClean)
 
   if (!user) {
     return {

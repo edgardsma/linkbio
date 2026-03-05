@@ -1,5 +1,5 @@
-// Este e o arquivo de schema do Prisma
-// Documentacao: https://pris.ly/d/prisma-schema
+// Este é o arquivo de schema do Prisma
+// Documentação: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -22,12 +22,18 @@ model User {
   bio           String?      // Biografia do usuário
   background    String?      // Imagem de fundo
 
+  // Sistema de RBAC - Role-Based Access Control
+  role          String       @default("user") // user, admin, agency
+
+  // Sistema de Multi-Cliente (Agências)
+  agencyId      String?     // ID da agência que gerencia este usuário
+
   // Personalização
   primaryColor      String    @default("#667eea")    // Cor primária
   secondaryColor   String    @default("#764ba2")   // Cor secundária
   backgroundColor String    @default("#f9fafb")    // Cor de fundo
   textColor        String    @default("#111827")    // Cor do texto
-  themeId          String?   @default("default")  // Tema selecionado
+  themeId          String?                         // Tema selecionado
 
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt

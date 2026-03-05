@@ -17,7 +17,7 @@ services:
     networks:
       - linkbio-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U linkbio -d linkbio"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,6 +67,7 @@ services:
       - upload_data_dev:/app/public/uploads
     environment:
       - NODE_ENV=development
+      - NEXT_DISABLE_TURBOPACK=1
 
 volumes:
   postgres_data_dev:

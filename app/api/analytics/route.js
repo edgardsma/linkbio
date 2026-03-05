@@ -1,111 +1,105 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
-import { requireAuth } from '@/lib/auth.js'
+import { requireAuth, isAdmin, canViewAnalytics } from '@/lib/auth'
+import { logger, apiLogger } from '@/lib/logger'
+import { getRequestId, withRequestId } from '@/lib/middleware'
+import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
 
-// Buscar dados de analytics do usuário
+// Buscar analytics do usuário
 export async function GET(request) {
-  try {
-    const user = await requireAuth(request)
+  return trackPerformance('GET /api/analytics', async () => {
+    const requestId = getRequestId()
 
-    const userWithLinks = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: {
-        links: {
-          where: { isActive: true },
-          orderBy: { position: 'asc' },
+    try {
+      apiLogger.info('Analytics solicitado', { requestId })
+
+      const user = await isAdmin(request)
+
+      if (!user) {
+        apiLogger.warn('Acesso negado ao analytics - não é admin', { requestId })
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      }
+
+      if (!canViewAnalytics(user)) {
+        apiLogger.warn('Acesso negado ao analytics - plano não permite', {
+          requestId,
+          userId: user.id,
+          role: user.role,
+        })
+        return NextResponse.json(
+          { error: 'Analytics disponível apenas para planos PRO e acima' },
+          { status: 403 }
+        )
+      }
+
+      // Buscar analytics
+      const [totalLinks, totalClicks, topLinks, clicksByDay] = await Promise.all([
+        trackPrismaOperation('link.count (analytics)', async () => {
+          return prisma.link.count({
+            where: { userId: user.id, isActive: true },
+          })
+        }),
+        trackPrismaOperation('click.count (total)', async () => {
+          return prisma.click.count({
+            where: {
+              link: { userId: user.id },
+            },
+          })
+        }),
+        trackPrismaOperation('link.findMany (top)', async () => {
+          return prisma.link.findMany({
+            where: { userId: user.id, isActive: true },
+            orderBy: { clicks: 'desc' },
+            take: 5,
+            select: {
+              id: true,
+              title: true,
+              url: true,
+              clicks: true,
+              createdAt: true,
+            },
+          })
+        }),
+        trackPrismaOperation('click.groupBy (byDay)', async () => {
+          return prisma.click.groupBy({
+            by: ['createdAt'],
+            where: {
+              link: { userId: user.id },
+              createdAt: {
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Últimos 30 dias
+              },
+            },
+            _count: true,
+            orderBy: { createdAt: 'desc' },
+          })
+        }),
+      ])
+
+      apiLogger.info('Analytics recuperado com sucesso', {
+        requestId,
+        userId: user.id,
+        totalLinks,
+        totalClicks,
+      })
+
+      const analytics = {
+        summary: {
+          totalLinks,
+          totalClicks,
+          averageClicksPerLink: totalLinks > 0 ? Math.round(totalClicks / totalLinks) : 0,
         },
-      },
-    })
+        topLinks,
+        clicksByDay: clicksByDay.map((item) => ({
+          date: item.createdAt.toISOString().split('T')[0],
+          clicks: item._count,
+        })),
+      }
 
-    if (!userWithLinks) {
-      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+      const response = NextResponse.json(analytics)
+      return withRequestId(response)
+    } catch (error) {
+      logger.error('Erro ao buscar analytics', error, { requestId })
+      return NextResponse.json({ error: 'Erro ao buscar analytics' }, { status: 500 })
     }
-
-    // Total de cliques
-    const totalClicks = await prisma.click.count({
-      where: {
-        link: {
-          userId: userWithLinks.id,
-        },
-      },
-    })
-
-    // Cliques por link
-    const clicksByLink = userWithLinks.links.map(link => ({
-      id: link.id,
-      title: link.title,
-      clicks: link.clicks,
-    }))
-
-    // Distribuição por hora (últimas 24 horas)
-    const clicksByHour = []
-    for (let i = 23; i >= 0; i--) {
-      const hourStart = new Date()
-      hourStart.setHours(hourStart.getHours() - i, 0, 0, 0)
-
-      const hourEnd = new Date(hourStart)
-      hourEnd.setHours(hourEnd.getHours() + 1)
-
-      const count = await prisma.click.count({
-        where: {
-          link: { userId: userWithLinks.id },
-          createdAt: {
-            gte: hourStart,
-            lt: hourEnd,
-          },
-        },
-      })
-
-      clicksByHour.push({
-        hour: hourStart.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        clicks: count,
-      })
-    }
-
-    // Distribuição por dia (últimos 7 dias)
-    const clicksByDay = []
-    for (let i = 6; i >= 0; i--) {
-      const dayStart = new Date()
-      dayStart.setDate(dayStart.getDate() - i)
-      dayStart.setHours(0, 0, 0, 0)
-
-      const dayEnd = new Date(dayStart)
-      dayEnd.setDate(dayEnd.getDate() + 1)
-
-      const count = await prisma.click.count({
-        where: {
-          link: { userId: userWithLinks.id },
-          createdAt: {
-            gte: dayStart,
-            lt: dayEnd,
-          },
-        },
-      })
-
-      clicksByDay.push({
-        day: dayStart.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric' }),
-        clicks: count,
-      })
-    }
-
-    // Top links com percentual
-    const sortedLinks = [...clicksByLink].sort((a, b) => b.clicks - a.clicks)
-    const topLinks = sortedLinks.map(link => ({
-      ...link,
-      percentage: totalClicks > 0 ? Math.round((link.clicks / totalClicks) * 100) : 0,
-    }))
-
-    return NextResponse.json({
-      totalClicks,
-      totalLinks: userWithLinks.links.length,
-      totalActiveLinks: userWithLinks.links.filter(l => l.isActive).length,
-      clicksByLink,
-      clicksByHour,
-      clicksByDay,
-      topLinks: topLinks.slice(0, 10),
-    })
-  } catch (error) {
-    console.error('Erro ao buscar analytics:', error)
-    return NextResponse.json({ error: 'Erro ao buscar analytics' }, { status: 500 })
-  }
+  })
 }

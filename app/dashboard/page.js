@@ -1,8 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import AnalyticsCharts from '@/components/AnalyticsCharts'
 import QRCodeWidget from '@/components/QRCodeWidget'
@@ -11,9 +10,8 @@ import LinkTypeSelector, { getLinkPlaceholder, formatLinkUrl } from '@/component
 import MobilePreview from '@/components/MobilePreview'
 import DraggableLinkList from '@/components/DraggableLinkList'
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { data: session, status } = useSession()
-  const searchParams = useSearchParams()
   const [links, setLinks] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -240,6 +238,14 @@ export default function DashboardPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div></div>}>
+      <DashboardContent />
+    </Suspense>
   )
 }
 
