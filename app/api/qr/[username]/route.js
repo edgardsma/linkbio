@@ -1,12 +1,28 @@
 import { NextResponse } from 'next/server'
 import QRCode from 'qrcode'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma.js'
+import { qrRateLimit } from '@/lib/rate-limit.js'
 
 export async function GET(
   request,
   { params }
 ) {
-  const username = params.username.replace('@', '')
+  // Aplicar rate limiting para QR Code
+  const identifier = qrRateLimit.getIP(request)
+  const rateLimitResult = qrRateLimit.check(identifier)
+
+  if (rateLimitResult.limited) {
+    return NextResponse.json(
+      { error: 'Muitas requisições de QR Code. Tente novamente em 1 minuto.' },
+      {
+        status: 429,
+        headers: qrRateLimit.getHeaders(rateLimitResult),
+      }
+    )
+  }
+
+  const { username } = await params
+  const usernameClean = username.replace('@', '')
   const { searchParams } = new URL(request.url)
 
   // Parâmetros opcionais
@@ -32,7 +48,7 @@ export async function GET(
 
   // Buscar usuário
   const user = await prisma.user.findUnique({
-    where: { username },
+    where: { username: usernameClean },
   })
 
   if (!user) {
@@ -44,7 +60,7 @@ export async function GET(
 
   // Gerar URL da página
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-  const pageUrl = `${baseUrl}/${username}`
+  const pageUrl = `${baseUrl}/${usernameClean}`
 
   try {
     // Gerar QR Code como buffer PNG
@@ -64,7 +80,8 @@ export async function GET(
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=3600',
-        'Content-Disposition': `inline; filename="qr-${username}.png"`,
+        'Content-Disposition': `inline; filename="qr-${usernameClean}.png"`,
+        ...qrRateLimit.getHeaders(rateLimitResult),
       },
     })
   } catch (error) {

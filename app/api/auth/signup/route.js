@@ -1,16 +1,111 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma.js'
 import bcrypt from 'bcryptjs'
+import { validateData, ValidationError } from '@/lib/validation.js'
+import { authRateLimit } from '@/lib/rate-limit.js'
 
 export async function POST(request) {
+  // Aplicar rate limiting
+  const identifier = authRateLimit.getIP(request)
+  const rateLimitResult = authRateLimit.check(identifier)
+
+  if (rateLimitResult.limited) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas de registro. Tente novamente em 15 minutos.' },
+      {
+        status: 429,
+        headers: authRateLimit.getHeaders(rateLimitResult),
+      }
+    )
+  }
   try {
     const body = await request.json()
     const { name, email, username, password } = body
 
-    // Validações
-    if (!name || !email || !username || !password) {
+    // Validação usando Zod
+    const schema = {
+      email: (value) => {
+        if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          throw new Error('Email inválido')
+        }
+      },
+      password: (value) => {
+        if (!value || value.length < 8) {
+          throw new Error('A senha deve ter no mínimo 8 caracteres')
+        }
+        if (!/[A-Z]/.test(value)) {
+          throw new Error('A senha deve conter pelo menos uma letra maiúscula')
+        }
+        if (!/[a-z]/.test(value)) {
+          throw new Error('A senha deve conter pelo menos uma letra minúscula')
+        }
+        if (!/[0-9]/.test(value)) {
+          throw new Error('A senha deve conter pelo menos um número')
+        }
+      },
+      name: (value) => {
+        if (!value || value.length < 2) {
+          throw new Error('Nome deve ter no mínimo 2 caracteres')
+        }
+      },
+      username: (value) => {
+        if (!value || value.length < 3) {
+          throw new Error('Username deve ter no mínimo 3 caracteres')
+        }
+        if (value.length > 30) {
+          throw new Error('Username deve ter no máximo 30 caracteres')
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+          throw new Error('Username só pode conter letras, números e underscore')
+        }
+      },
+    }
+
+    // Executar validações
+    const errors = {}
+    if (email) {
+      try {
+        schema.email(email)
+      } catch (e) {
+        errors.email = e.message
+      }
+    } else {
+      errors.email = 'Email é obrigatório'
+    }
+
+    if (password) {
+      try {
+        schema.password(password)
+      } catch (e) {
+        errors.password = e.message
+      }
+    } else {
+      errors.password = 'Senha é obrigatória'
+    }
+
+    if (name) {
+      try {
+        schema.name(name)
+      } catch (e) {
+        errors.name = e.message
+      }
+    } else {
+      errors.name = 'Nome é obrigatório'
+    }
+
+    if (username) {
+      try {
+        schema.username(username)
+      } catch (e) {
+        errors.username = e.message
+      }
+    } else {
+      errors.username = 'Username é obrigatório'
+    }
+
+    if (Object.keys(errors).length > 0) {
       return NextResponse.json(
-        { error: 'Todos os campos são obrigatórios' },
+        { error: 'Dados inválidos', details: errors },
         { status: 400 }
       )
     }
@@ -72,7 +167,10 @@ export async function POST(request) {
           username: user.username,
         },
       },
-      { status: 201 }
+      {
+        status: 201,
+        headers: authRateLimit.getHeaders(rateLimitResult),
+      }
     )
   } catch (error) {
     console.error('Erro ao criar usuário:', error)

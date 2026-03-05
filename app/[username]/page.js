@@ -1,11 +1,12 @@
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma.js'
 import { notFound } from 'next/navigation'
 
 export default async function ProfilePage({ params }) {
-  const username = params.username.replace('@', '')
+  const { username } = await params
+  const usernameClean = username.replace('@', '')
 
   const user = await prisma.user.findUnique({
-    where: { username },
+    where: { username: usernameClean },
     include: {
       links: {
         where: { isActive: true },
@@ -205,9 +206,10 @@ async function trackClick(linkId) {
 
 // Configuração de SEO dinâmico
 export async function generateMetadata({ params }) {
-  const username = params.username.replace('@', '')
+  const { username } = await params
+  const usernameClean = username.replace('@', '')
   const user = await prisma.user.findUnique({
-    where: { username },
+    where: { username: usernameClean },
   })
 
   if (!user) {

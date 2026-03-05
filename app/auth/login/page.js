@@ -89,6 +89,18 @@ export default function LoginPage() {
               </svg>
               Entrar com GitHub
             </button>
+            <button
+              onClick={() => signIn('facebook', { callbackUrl: '/dashboard' })}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="#1877F2"
+                  d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v3.47h3.047c-.38 1.688-1.448 2.934-3.653 2.934-.994 0-1.957-.408-2.649-1.077.638 1.575 1.836 3.24 1.836 3.835 0 2.165-1.749 3.921-3.921 3.921-1.575 0-2.958-.816-3.653-2.076V24h6.069c1.838 0 3.348-1.521 3.348-3.397V12.073h-.001z"
+                />
+              </svg>
+              Entrar com Facebook
+            </button>
           </div>
 
           {/* Divider */}

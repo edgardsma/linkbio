@@ -1,10 +1,11 @@
-const NextAuth = require('next-auth')
-const GoogleProvider = require('next-auth/providers/google')
-const GitHubProvider = require('next-auth/providers/github')
-const CredentialsProvider = require('next-auth/providers/credentials')
-const { PrismaAdapter } = require('@auth/prisma-adapter')
-const { prisma } = require('@/lib/prisma.js')
-const bcrypt = require('bcryptjs')
+import NextAuth from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
+import GitHubProvider from 'next-auth/providers/github'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import { prisma } from '@/lib/prisma.js'
+import bcrypt from 'bcryptjs'
+import { authLogger } from '@/lib/logger.js'
 
 const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -55,6 +56,35 @@ const authOptions = {
         }
       },
     }),
+    // Provedor Facebook OAuth
+    {
+      id: 'facebook',
+      name: 'Facebook',
+      type: 'oauth',
+      authorization: {
+        url: 'https://www.facebook.com/v19.0/dialog/oauth',
+        params: {
+          scope: 'email,public_profile',
+        },
+      },
+      token: 'https://graph.facebook.com/v19.0/oauth/access_token',
+      userinfo: {
+        url: 'https://graph.facebook.com/v19.0/me',
+        params: {
+          fields: 'id,name,email,picture',
+        },
+      },
+      clientId: process.env.FACEBOOK_CLIENT_ID || '',
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET || '',
+      profile(profile) {
+        return {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture?.data?.url,
+        }
+      },
+    },
   ],
   session: {
     strategy: 'jwt',
@@ -75,4 +105,6 @@ const authOptions = {
 
 const handler = NextAuth(authOptions)
 
-module.exports = { GET: handler, POST: handler, authOptions }
+export const GET = handler
+export const POST = handler
+export { authOptions }

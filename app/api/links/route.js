@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma.js'
 import { canAddLinks } from '@/lib/stripe-helpers'
+import { requireAuth } from '@/lib/auth.js'
+import { createRateLimit, apiRateLimit } from '@/lib/rate-limit.js'
 
 // Buscar todos os links do usuário
-export async function GET() {
+export async function GET(request) {
   try {
-    const session = await getServerSession()
+    const user = await requireAuth(request)
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const userWithLinks = await prisma.user.findUnique({
+      where: { id: user.id },
       include: {
         links: {
           orderBy: { position: 'asc' },
@@ -21,11 +18,11 @@ export async function GET() {
       },
     })
 
-    if (!user) {
+    if (!userWithLinks) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json(user.links)
+    return NextResponse.json(userWithLinks.links)
   } catch (error) {
     console.error('Erro ao buscar links:', error)
     return NextResponse.json({ error: 'Erro ao buscar links' }, { status: 500 })
@@ -35,18 +32,28 @@ export async function GET() {
 // Criar novo link
 export async function POST(request) {
   try {
-    const session = await getServerSession()
+    // Aplicar rate limiting para criação
+    const identifier = createRateLimit.getIP(request)
+    const rateLimitResult = createRateLimit.check(identifier)
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (rateLimitResult.limited) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas de criação. Tente novamente em 1 hora.' },
+        {
+          status: 429,
+          headers: createRateLimit.getHeaders(rateLimitResult),
+        }
+      )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const user = await requireAuth(request)
+
+    const userWithLinks = await prisma.user.findUnique({
+      where: { id: user.id },
       include: { links: true },
     })
 
-    if (!user) {
+    if (!userWithLinks) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
 
@@ -54,22 +61,44 @@ export async function POST(request) {
     const { title, url, description, icon } = body
 
     // Validações
-    if (!title || !url) {
-      return NextResponse.json({ error: 'Título e URL são obrigatórios' }, { status: 400 })
+    const errors = {}
+
+    if (!title) {
+      errors.title = 'Título é obrigatório'
+    } else if (title.length > 100) {
+      errors.title = 'Título deve ter no máximo 100 caracteres'
     }
 
-    // Validação de URL
-    try {
-      new URL(url)
-    } catch {
-      return NextResponse.json({ error: 'URL inválida' }, { status: 400 })
+    if (!url) {
+      errors.url = 'URL é obrigatória'
+    } else {
+      try {
+        new URL(url)
+      } catch {
+        errors.url = 'URL inválida'
+      }
+    }
+
+    if (description && description.length > 200) {
+      errors.description = 'Descrição deve ter no máximo 200 caracteres'
+    }
+
+    if (icon && icon.length > 50) {
+      errors.icon = 'Ícone deve ter no máximo 50 caracteres'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: errors },
+        { status: 400 }
+      )
     }
 
     // Verificar limite de links do plano
-    const canAdd = await canAddLinks(user.id, user.links.length)
+    const canAdd = await canAddLinks(userWithLinks.id, userWithLinks.links.length)
     if (!canAdd) {
       const subscription = await prisma.subscription.findUnique({
-        where: { userId: user.id },
+        where: { userId: userWithLinks.id },
       })
       const plan = subscription?.plan || 'FREE'
       return NextResponse.json(
@@ -85,16 +114,19 @@ export async function POST(request) {
     // Criar link
     const link = await prisma.link.create({
       data: {
-        userId: user.id,
+        userId: userWithLinks.id,
         title,
         url,
         description: description || null,
         icon: icon || null,
-        position: user.links.length,
+        position: userWithLinks.links.length,
       },
     })
 
-    return NextResponse.json(link, { status: 201 })
+    return NextResponse.json(link, {
+      status: 201,
+      headers: createRateLimit.getHeaders(rateLimitResult),
+    })
   } catch (error) {
     console.error('Erro ao criar link:', error)
     return NextResponse.json({ error: 'Erro ao criar link' }, { status: 500 })

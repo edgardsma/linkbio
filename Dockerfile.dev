@@ -8,7 +8,9 @@ WORKDIR /app
 RUN apk add --no-cache \
     curl \
     postgresql-client \
-    git
+    git \
+    openssl \
+    openssl-dev
 
 # Copiar arquivos de dependências e Prisma
 COPY package*.json ./

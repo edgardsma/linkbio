@@ -80,17 +80,23 @@ export default function DashboardPage() {
   const handleReorder = async (reorderedLinks) => {
     setLinks(reorderedLinks)
 
-    // Atualizar posições no banco de dados
+    // Atualizar posições no banco de dados usando o endpoint de reordenar
     try {
-      await Promise.all(
-        reorderedLinks.map(link =>
-          fetch(`/api/links/${link.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ position: link.position }),
-          })
-        )
-      )
+      const response = await fetch('/api/links/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          links: reorderedLinks.map(link => ({
+            id: link.id,
+            position: link.position,
+          })),
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Erro ao reordenar links')
+      }
     } catch (error) {
       console.error('Erro ao atualizar ordem:', error)
       fetchLinks() // Reverter em caso de erro

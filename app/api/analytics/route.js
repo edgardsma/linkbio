@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma.js'
+import { requireAuth } from '@/lib/auth.js'
 
 // Buscar dados de analytics do usuário
-export async function GET() {
+export async function GET(request) {
   try {
-    const session = await getServerSession()
+    const user = await requireAuth(request)
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+    const userWithLinks = await prisma.user.findUnique({
+      where: { id: user.id },
       include: {
         links: {
           where: { isActive: true },
@@ -21,7 +17,7 @@ export async function GET() {
       },
     })
 
-    if (!user) {
+    if (!userWithLinks) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
 
@@ -29,13 +25,13 @@ export async function GET() {
     const totalClicks = await prisma.click.count({
       where: {
         link: {
-          userId: user.id,
+          userId: userWithLinks.id,
         },
       },
     })
 
     // Cliques por link
-    const clicksByLink = user.links.map(link => ({
+    const clicksByLink = userWithLinks.links.map(link => ({
       id: link.id,
       title: link.title,
       clicks: link.clicks,
@@ -52,7 +48,7 @@ export async function GET() {
 
       const count = await prisma.click.count({
         where: {
-          link: { userId: user.id },
+          link: { userId: userWithLinks.id },
           createdAt: {
             gte: hourStart,
             lt: hourEnd,
@@ -78,7 +74,7 @@ export async function GET() {
 
       const count = await prisma.click.count({
         where: {
-          link: { userId: user.id },
+          link: { userId: userWithLinks.id },
           createdAt: {
             gte: dayStart,
             lt: dayEnd,
@@ -101,8 +97,8 @@ export async function GET() {
 
     return NextResponse.json({
       totalClicks,
-      totalLinks: user.links.length,
-      totalActiveLinks: user.links.filter(l => l.isActive).length,
+      totalLinks: userWithLinks.links.length,
+      totalActiveLinks: userWithLinks.links.filter(l => l.isActive).length,
       clicksByLink,
       clicksByHour,
       clicksByDay,
