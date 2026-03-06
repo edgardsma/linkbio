@@ -13,23 +13,11 @@ export async function GET(request) {
     try {
       apiLogger.info('Analytics solicitado', { requestId })
 
-      const user = await isAdmin(request)
+      const user = await requireAuth(request)
 
       if (!user) {
-        apiLogger.warn('Acesso negado ao analytics - não é admin', { requestId })
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-      }
-
-      if (!canViewAnalytics(user)) {
-        apiLogger.warn('Acesso negado ao analytics - plano não permite', {
-          requestId,
-          userId: user.id,
-          role: user.role,
-        })
-        return NextResponse.json(
-          { error: 'Analytics disponível apenas para planos PRO e acima' },
-          { status: 403 }
-        )
+        apiLogger.warn('Acesso negado ao analytics - não autenticado', { requestId })
+        return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
       }
 
       // Buscar analytics
