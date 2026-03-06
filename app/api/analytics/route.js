@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
-import { requireAuth, isAdmin, canViewAnalytics } from '@/lib/auth'
+import { requireAuth, isAdmin, canViewAnalytics } from '@/lib/auth.ts'
 import { logger, apiLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma.js'
 import { logger, apiLogger, dbLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
-import { requireAuth, canAccess } from '@/lib/auth'
+import { requireAuth, canAccess } from '@/lib/auth.ts'
 
 // Buscar perfil do usuário
 export async function GET(request) {

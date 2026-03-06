@@ -6,7 +6,7 @@ import { createRateLimit } from '@/lib/rate-limit.js'
 import { logger, apiLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
-import { canEditOtherUser, canAccess } from '@/lib/auth'
+import { canEditOtherUser, canAccess } from '@/lib/auth.ts'
 
 // Buscar um link específico
 export async function GET(request, { params }) {
