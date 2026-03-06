@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function QRCodeWidget({ username }) {
   const [qrUrl, setQrUrl] = useState('')
@@ -57,11 +57,10 @@ export default function QRCodeWidget({ username }) {
               <button
                 key={s}
                 onClick={() => setSize(s)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  size === s
+                className={`px-4 py-2 rounded-lg font-medium transition ${size === s
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
+                  }`}
               >
                 {s}px
               </button>
