@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { GET as getHealth } from '@/lib/health'
+import { getHealthSimple } from '@/lib/health-simple'
 import { logger } from '@/lib/logger'
 import { getRequestId } from '@/lib/middleware'
 
@@ -7,7 +7,7 @@ import { getRequestId } from '@/lib/middleware'
  * API Route: Health Check
  *
  * Endpoint para monitoramento de saúde do sistema
- * Verifica: banco de dados, Redis, performance
+ * Verifica: banco de dados, Redis
  */
 export async function GET(request) {
   const requestId = getRequestId()
@@ -18,12 +18,11 @@ export async function GET(request) {
       url: request.url,
     })
 
-    const health = await getHealth()
+    const health = await getHealthSimple()
 
     logger.info('Health check concluído', {
       requestId,
       status: health.status,
-      uptime: health.uptime,
     })
 
     return NextResponse.json(health)

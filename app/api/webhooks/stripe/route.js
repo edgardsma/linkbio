@@ -9,10 +9,12 @@ import {
 } from '@/lib/webhook-logger'
 
 // Inicializar Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-11-20.acacia',
-  typescript: true,
-})
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-11-20.acacia',
+      typescript: true,
+    })
+  : null
 
 // Mapeamento de planos Stripe para planos do sistema
 const PLAN_MAPPING = {
@@ -269,6 +271,11 @@ async function processEvent(event) {
 
 // POST handler para webhooks do Stripe
 export async function POST(request) {
+  if (!stripe) {
+    console.error('[Webhook] Stripe não está configurado')
+    return NextResponse.json({ error: 'Stripe não está configurado' }, { status: 503 })
+  }
+
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 

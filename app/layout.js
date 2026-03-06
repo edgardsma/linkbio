@@ -39,10 +39,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <SessionProvider>
-      <html lang="pt-BR" suppressHydrationWarning>
-        <body className={inter.className}>{children}</body>
-      </html>
-    </SessionProvider>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className={inter.className}>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
+    </html>
   )
 }

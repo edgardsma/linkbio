@@ -4,9 +4,11 @@ import Stripe from 'stripe'
 import prisma from '@/lib/prisma'
 
 // Inicializar Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia',
-})
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-01-27.acacia',
+    })
+  : null
 
 // Mapeamento de planos para Price IDs do Stripe
 // OBSERVAÇÃO: Você precisa criar estes preços no Dashboard do Stripe
@@ -31,6 +33,14 @@ const PLANS = {
 
 export async function POST(request) {
   try {
+    // Verificar se o Stripe está configurado
+    if (!stripe) {
+      return Response.json(
+        { error: 'Stripe não está configurado. Configure STRIPE_SECRET_KEY no .env' },
+        { status: 503 }
+      )
+    }
+
     // Verificar sessão do usuário
     const session = await getServerSession(authOptions)
 

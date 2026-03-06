@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useSubscription, usePlans } from '@/hooks/useSubscription'
 
 export default function PricingPlans() {
   const [billingCycle, setBillingCycle] = useState('monthly')
-  const { subscription, redirectToCheckout, openBillingPortal } = useSubscription()
+  const { subscription, redirectToCheckout, openBillingPortal, stripeConfigured } = useSubscription()
   const { plans, loading } = usePlans()
 
   const currentPlan = subscription?.subscription?.plan || 'free'
@@ -14,6 +15,49 @@ export default function PricingPlans() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    )
+  }
+
+  if (!stripeConfigured) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-8">
+            <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Sistema de Pagamento Indisponível
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              O sistema de pagamentos não está configurado no momento. Você pode usar todas as funcionalidades gratuitas normalmente.
+            </p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Recursos Gratuitos Disponíveis:</h4>
+              <ul className="text-left space-y-2 text-gray-600 dark:text-gray-300">
+                <li>✅ Até 5 links por página</li>
+                <li>✅ Análises básicas de cliques</li>
+                <li>✅ 1 tema pré-definido</li>
+                <li>✅ Suporte por email</li>
+                <li>✅ QR Code padrão</li>
+              </ul>
+            </div>
+            <div className="mt-6">
+              <Link
+                href="/auth/signup"
+                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              >
+                Começar Grátis
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

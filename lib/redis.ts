@@ -3,13 +3,12 @@
  *
  * Implementa:
  * - Conexão Redis
- * - Rate limiting
+ * - Rate limiting simplificado
  * - Cache de perfis públicos
  * - Cache de sessões
  */
 
 import { Redis } from '@upstash/redis'
-import { Ratelimit } from '@upstash/ratelimit'
 
 // Tipos
 export interface CacheConfig {
@@ -25,7 +24,9 @@ export interface CachedData<T> {
 
 // Cliente Redis
 let redisInstance: Redis | null = null
-let ratelimitInstance: Ratelimit | null = null
+
+// Cache de rate limiting em memória para desenvolvimento
+const rateLimitCache: Map<string, { count: number; resetAt: number }> = new Map()
 
 /**
  * Inicializa o cliente Redis
@@ -41,34 +42,36 @@ export function getRedis(): Redis {
 }
 
 /**
- * Inicializa o rate limiter
- */
-export function getRatelimit(): Ratelimit {
-  if (!ratelimitInstance) {
-    const redis = getRedis()
-    ratelimitInstance = new Ratelimit({
-      redis: redis,
-      limiter: Ratelimit.slidingWindow(10, '10 s'), // 10 requisições por 10 segundos
-    })
-  }
-  return ratelimitInstance
-}
-
-/**
- * Verifica rate limiting
+ * Verifica rate limiting (simplificado)
  */
 export async function checkRateLimit(identifier: string, limit?: number): Promise<{
   allowed: boolean
   remaining: number
   resetAt: string
 }> {
-  const ratelimit = getRatelimit()
-  const { success, remaining, reset } = await ratelimit.limit(identifier)
+  const limitValue = limit || 100 // padrão: 100 requisições
+
+  const now = Date.now()
+  const windowMs = 60000 // 1 minuto em milissegundos
+
+  let data = rateLimitCache.get(identifier)
+
+  if (!data || now > data.resetAt + windowMs) {
+    // Criar nova janela
+    data = { count: 1, resetAt: now }
+    rateLimitCache.set(identifier, data)
+  } else {
+    // Incrementar contador
+    data.count++
+  }
+
+  const remaining = Math.max(0, limitValue - data.count)
+  const allowed = data.count <= limitValue
 
   return {
-    allowed: success,
+    allowed,
     remaining,
-    resetAt: new Date(reset).toISOString(),
+    resetAt: new Date(data.resetAt + windowMs).toISOString(),
   }
 }
 
@@ -76,12 +79,12 @@ export async function checkRateLimit(identifier: string, limit?: number): Promis
  * Obtém dados do cache
  */
 export async function getCached<T>(config: CacheConfig): Promise<T | null> {
-  const redis = getRedis()
-  const cached = await redis.get(config.key)
-
-  if (!cached) return null
-
   try {
+    const redis = getRedis()
+    const cached = await redis.get(config.key)
+
+    if (!cached) return null
+
     // Verificar se cached é uma string (pode ser null ou undefined)
     if (typeof cached !== 'string') return null
 

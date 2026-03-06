@@ -9,10 +9,28 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [stripeConfigured, setStripeConfigured] = useState(false)
 
   useEffect(() => {
-    fetchSubscription()
+    checkStripeStatus()
   }, [])
+
+  const checkStripeStatus = async () => {
+    try {
+      const response = await fetch('/api/stripe/status')
+      const data = await response.json()
+      setStripeConfigured(data.stripeConfigured)
+
+      if (data.stripeConfigured) {
+        fetchSubscription()
+      } else {
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error('Erro ao verificar status do Stripe:', err)
+      setLoading(false)
+    }
+  }
 
   const fetchSubscription = async () => {
     try {
@@ -91,6 +109,7 @@ export function useSubscription() {
     subscription,
     loading,
     error,
+    stripeConfigured,
     hasSubscription: subscription?.hasSubscription || false,
     plan: subscription?.subscription?.plan || 'free',
     status: subscription?.subscription?.status || 'active',

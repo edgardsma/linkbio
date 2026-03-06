@@ -6,7 +6,6 @@ import { createRateLimit, apiRateLimit } from '@/lib/rate-limit.js'
 import { logger, apiLogger, dbLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
-import { getLimitsByRole, canAccess } from '@/lib/auth'
 
 // Buscar todos os links do usuário
 export async function GET(request) {
@@ -16,11 +15,6 @@ export async function GET(request) {
     apiLogger.info('Listar links solicitado', { requestId })
 
     const user = await requireAuth(request)
-
-    if (!canAccess(user, '/api/links')) {
-      apiLogger.warn('Acesso negado à API de links', { requestId, userId: user.id })
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-    }
 
     const userWithLinks = await trackPrismaOperation('user.findUnique (links)', async () => {
       return prisma.user.findUnique({
@@ -77,13 +71,8 @@ export async function POST(request) {
 
       const user = await requireAuth(request)
 
-      if (!canAccess(user, '/api/links')) {
-        apiLogger.warn('Acesso negado à API de links', { requestId, userId: user.id })
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
-      }
-
-      // Verificar limites do plano/role
-      const limits = getLimitsByRole(user.role)
+      // Verificar limites do plano
+      const maxLinks = user.role === 'admin' ? Infinity : user.role === 'agency' ? 100 : 5
 
       const userWithLinks = await trackPrismaOperation('user.findUnique (create link)', async () => {
         return prisma.user.findUnique({
@@ -99,17 +88,17 @@ export async function POST(request) {
 
       const linkCount = userWithLinks.links.filter(l => l.isActive).length
 
-      if (linkCount >= limits.maxLinks) {
+      if (linkCount >= maxLinks) {
         apiLogger.warn('Limite de links atingido', {
           requestId,
           userId: user.id,
           role: user.role,
           currentCount: linkCount,
-          limit: limits.maxLinks,
+          limit: maxLinks,
         })
         return NextResponse.json(
           {
-            error: `Limite de ${limits.maxLinks} links atingido`,
+            error: `Limite de ${maxLinks} links atingido`,
             currentPlan: user.role,
             message: 'Faça upgrade para adicionar mais links',
           },

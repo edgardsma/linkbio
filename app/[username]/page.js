@@ -1,19 +1,32 @@
 import { prisma } from '@/lib/prisma.js'
 import { notFound } from 'next/navigation'
-import { getUserProfile, invalidateProfile } from '@/lib/redis'
-import { logger } from '@/lib/logger'
-import { getRequestId } from '@/lib/middleware'
+import Link from 'next/link'
+
+async function getUserProfile(username) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { username },
+      include: {
+        links: {
+          where: { isActive: true },
+          orderBy: { position: 'asc' },
+        },
+      },
+    })
+    return user
+  } catch (error) {
+    console.error('Erro ao buscar perfil:', error)
+    return null
+  }
+}
 
 export default async function ProfilePage({ params }) {
-  const requestId = getRequestId()
   const { username } = await params
   const usernameClean = username.replace('@', '')
 
-  // Usar cache do Redis para perfis públicos
   const user = await getUserProfile(usernameClean)
 
   if (!user) {
-    logger.warn('Perfil não encontrado', { requestId, username: usernameClean })
     notFound()
   }
 
@@ -104,10 +117,9 @@ export default async function ProfilePage({ params }) {
             user.links.map((link) => (
               <a
                 key={link.id}
-                href={link.url}
+                href={`/api/links/${link.id}/click?url=${encodeURIComponent(link.url)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackClick(link.id)}
                 className="block rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 p-4"
                 style={{
                   background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
@@ -176,38 +188,11 @@ export default async function ProfilePage({ params }) {
   )
 }
 
-// Função para registrar cliques
-async function trackClick(linkId) {
-  try {
-    // Incrementar contador de cliques
-    await prisma.link.update({
-      where: { id: linkId },
-      data: {
-        clicks: {
-          increment: 1,
-        },
-      },
-    })
-
-    // Registrar log do clique
-    await prisma.click.create({
-      data: {
-        linkId,
-        userAgent: navigator.userAgent,
-        referrer: document.referrer,
-      },
-    })
-  } catch (error) {
-    console.error('Erro ao registrar clique:', error)
-  }
-}
-
 // Configuração de SEO dinâmico
 export async function generateMetadata({ params }) {
   const { username } = await params
   const usernameClean = username.replace('@', '')
 
-  // Usar cache para metadata também
   const user = await getUserProfile(usernameClean)
 
   if (!user) {

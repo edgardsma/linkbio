@@ -4,12 +4,21 @@ import Stripe from 'stripe'
 import prisma from '@/lib/prisma'
 
 // Inicializar Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia',
-})
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-01-27.acacia',
+    })
+  : null
 
 export async function POST(request) {
   try {
+    if (!stripe) {
+      return Response.json(
+        { error: 'Stripe não está configurado. Configure STRIPE_SECRET_KEY no .env' },
+        { status: 503 }
+      )
+    }
+
     // Verificar sessão do usuário
     const session = await getServerSession(authOptions)
 
@@ -111,7 +120,7 @@ export async function GET() {
     const subscription = user.subscription
     let subscriptionDetails = null
 
-    if (subscription && subscription.stripeCustomerId) {
+    if (subscription && subscription.stripeCustomerId && stripe) {
       try {
         // Buscar detalhes da assinatura no Stripe
         const stripeSubscriptions = await stripe.subscriptions.list({

@@ -212,6 +212,13 @@ O **LinkBio Brasil** é uma plataforma completa para criação de páginas de li
 | [NextAuth.js](https://authjs.dev/) | 4.x | Autenticação completa |
 | [Dnd Kit](https://dndkit.com/) | 6.x | Drag and Drop |
 
+### Changelog / Últimas Atualizações
+
+- **Tailwind CSS v4:** Atualizado para Tailwind v4 utilizando `@tailwindcss/postcss`. O arquivo `tailwind.config.js` foi descontinuado.
+- **Server-Side Tracking:** O registro de cliques agora é feito no servidor via `/api/links/[id]/click`, resolvendo bugs de hidratação e APIs de navegador (`navigator`/`document`) no server component.
+- **Docker e PostgreSQL:** O healthcheck do Docker Compose foi corrigido e a connection string do banco local atualizada para suportar o `schema=public` nativo do Prisma.
+- **Autenticação:** Correção de contexto do `<SessionProvider>` no `app/layout.js` (movido para o `<body>`).
+
 ### Backend
 
 | Tecnologia | Versão | Descrição |

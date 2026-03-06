@@ -3,9 +3,11 @@ import prisma from '@/lib/prisma'
 import { headers } from 'next/headers'
 
 // Inicializar Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia',
-})
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-01-27.acacia',
+    })
+  : null
 
 // Webhook secret do Stripe (obtido no dashboard)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -23,6 +25,14 @@ const STATUS_MAP = {
 
 export async function POST(request) {
   try {
+    if (!stripe) {
+      console.error('Stripe não está configurado')
+      return Response.json(
+        { error: 'Stripe não está configurado' },
+        { status: 503 }
+      )
+    }
+
     // Obter corpo da requisição como texto
     const body = await request.text()
 
