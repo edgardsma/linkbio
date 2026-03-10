@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button, Card, CardBody, CardHeader, Input } from '@/components'
 import AvatarUpload from '@/components/AvatarUpload'
 import BackgroundUpload from '@/components/BackgroundUpload'
+import ThemeSelector from '@/components/ThemeSelector'
 
 export default function ProfilePage() {
   const { data: session, status } = useSession()
@@ -133,6 +134,19 @@ export default function ProfilePage() {
                 currentBackground={formData.background}
                 onBackgroundChange={(url) => setFormData({ ...formData, background: url })}
               />
+
+              {/* Theme Selection */}
+              <div className="mt-6">
+                <ThemeSelector
+                  currentColors={{
+                    primaryColor: formData.primaryColor,
+                    secondaryColor: formData.secondaryColor,
+                    backgroundColor: formData.backgroundColor,
+                    textColor: formData.textColor,
+                  }}
+                  onThemeChange={(colors) => setFormData({ ...formData, ...colors })}
+                />
+              </div>
 
               {/* Name */}
               <Input
