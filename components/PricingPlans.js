@@ -7,9 +7,9 @@ import { useSubscription, usePlans } from '@/hooks/useSubscription'
 export default function PricingPlans() {
   const [billingCycle, setBillingCycle] = useState('monthly')
   const { subscription, redirectToCheckout, openBillingPortal, stripeConfigured, plan: currentPlan } = useSubscription()
-  const { plans, loading: plansLoading } = usePlans()
+  const { plans, loading: loading } = usePlans()
 
-  if (loading || plansLoading) {
+  if (loading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
