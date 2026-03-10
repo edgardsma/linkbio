@@ -254,6 +254,23 @@ function AddLinkForm({ onClose, onAdd }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const socialPresets = [
+    { title: 'Instagram', url: 'https://instagram.com/', icon: '📸', type: 'url' },
+    { title: 'TikTok', url: 'https://tiktok.com/@', icon: '🎵', type: 'url' },
+    { title: 'X (Twitter)', url: 'https://twitter.com/', icon: '🐦', type: 'url' },
+    { title: 'WhatsApp', url: '', icon: '💬', type: 'whatsapp' },
+  ]
+
+  const handlePresetClick = (preset) => {
+    setFormData({
+      ...formData,
+      title: preset.title,
+      url: preset.url,
+      icon: preset.icon,
+      type: preset.type
+    })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -288,6 +305,26 @@ function AddLinkForm({ onClose, onAdd }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Sugestões Rápidas */}
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Adicionar rapidamente
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {socialPresets.map(preset => (
+            <button
+              key={preset.title}
+              type="button"
+              onClick={() => handlePresetClick(preset)}
+              className="px-3 py-2 bg-purple-50 dark:bg-gray-700 border border-purple-100 dark:border-gray-600 text-purple-700 dark:text-purple-300 text-sm rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900 transition flex items-center gap-2 font-medium"
+            >
+              <span>{preset.icon}</span>
+              <span>{preset.title}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Tipo de Link */}
       <LinkTypeSelector
         value={formData.type}
