@@ -171,7 +171,13 @@ function DashboardContent() {
                   <p className="mt-2">Clique em "Adicionar Link" para começar</p>
                 </div>
               ) : (
-                <DraggableLinkList links={links} onReorder={handleReorder} />
+                <DraggableLinkList
+                  links={links}
+                  onReorder={handleReorder}
+                  onToggle={handleToggleLink}
+                  onEdit={handleEditLink}
+                  onDelete={handleDeleteLink}
+                />
               )}
             </div>
           </div>
