@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import QRCode from 'qrcode'
-import { prisma } from '../../../lib/prisma.js'
-import { qrRateLimit } from '../../../lib/rate-limit.js'
+import { prisma } from '@/lib/prisma.js'
+import { qrRateLimit } from '@/lib/rate-limit.js'
 
 export async function GET(
   request,
