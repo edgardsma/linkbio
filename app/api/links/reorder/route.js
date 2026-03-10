@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
-import { requireAuth } from '@/lib/auth.js'
+import { requireAuth } from '@/lib/auth'
 import { apiLogger } from '@/lib/logger.js'
 
 /**

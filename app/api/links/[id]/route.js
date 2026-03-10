@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma.js'
-import { requireAuth } from '@/lib/auth.js'
+import { requireAuth } from '@/lib/auth'
 import { createRateLimit } from '@/lib/rate-limit.js'
 import { logger, apiLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'

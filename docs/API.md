@@ -210,7 +210,7 @@ Content-Type: application/json
 
 ---
 
-### Avatar (Proposto)
+### Avatar
 
 #### POST /api/avatar
 Fazer upload de avatar.
@@ -236,7 +236,7 @@ avatar: <file>
 
 ---
 
-### Background (Proposto)
+### Background
 
 #### POST /api/background
 Fazer upload de imagem de fundo.
@@ -262,7 +262,7 @@ background: <file>
 
 ---
 
-### QR Code (Proposto)
+### QR Code
 
 #### GET /api/qr/[username]
 Gerar QR Code da página pública.
@@ -438,9 +438,9 @@ Popular banco com temas pré-definidos.
 {
   "success": true,
   "message": "Temas inseridos com sucesso",
-  "created": 19,
+  "created": 20,
   "skipped": 0,
-  "total": 19
+  "total": 20
 }
 ```
 

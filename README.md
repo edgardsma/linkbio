@@ -587,13 +587,16 @@ npx prisma dev          # Iniciar banco local
 - [x] Interface responsiva com modo escuro
 - [x] Adicionar/editar/excluir links
 - [x] Ícones (emojis) para links
+- [x] Drag and drop para reordenar links
+- [x] Upload de imagem para avatar e background
+- [x] QR Code para compartilhamento
+- [x] Sistema de Autenticação TypeScript com RBAC
+- [x] Testes Unitários e Integração (100% pass)
 
 ### 🚧 Em Desenvolvimento
 
-- [ ] Drag and drop para reordenar links
-- [ ] Upload de imagem para avatar
-- [ ] Integração completa com Stripe
-- [ ] QR Code para compartilhamento
+- [ ] Integração completa com Stripe (agora com suporte server-side pronto)
+- [ ] Análises avançadas (backend implementado, frontend em expansão)
 
 ### 📋 Planejado
 

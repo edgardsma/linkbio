@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
-import { requerirAutenticacao, isAgencyOrAdmin } from '@/lib/auth.js'
+import { requireAuth, UserRole, isAgencyOrAdmin } from '@/lib/auth'
 import { logger, apiLogger } from '@/lib/logger.js'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
@@ -15,10 +15,10 @@ export async function GET(request) {
     try {
       apiLogger.info('Agência listar clientes solicitado', { requestId })
 
-      const user = await requerirAutenticacao(request)
+      const user = await requireAuth(request)
 
       // Verificar se é agência ou admin
-      if (!isAgencyOrAdmin(request)) {
+      if (!(await isAgencyOrAdmin(request))) {
         apiLogger.warn('Acesso negado - não é agência', { requestId, userId: user.id })
         return NextResponse.json(
           { error: 'Acesso negado. Plano PRO ou ADMIN necessário.' },
@@ -80,10 +80,10 @@ export async function POST(request) {
     try {
       apiLogger.info('Agência criar cliente solicitado', { requestId })
 
-      const user = await requerirAutenticacao(request)
+      const user = await requireAuth(request)
 
       // Verificar se é agência ou admin
-      if (!isAgencyOrAdmin(request)) {
+      if (!(await isAgencyOrAdmin(request))) {
         apiLogger.warn('Acesso negado - não é agência', { requestId, userId: user.id })
         return NextResponse.json(
           { error: 'Acesso negado. Plano PRO ou ADMIN necessário.' },

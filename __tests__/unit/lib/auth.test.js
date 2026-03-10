@@ -1,5 +1,4 @@
-import { describe, it, expect } from '@jest/globals'
-import { UserRole, hasRole, hasAnyRole, canAccess, getLimitsByRole } from '@/lib/auth'
+import { UserRole, hasRole, hasAnyRole, canAccess, getLimitsByRole } from '../../../lib/auth'
 
 describe('RBAC - Auth Helpers', () => {
   describe('UserRole enum', () => {
@@ -73,22 +72,24 @@ describe('RBAC - Auth Helpers', () => {
       const limits = getLimitsByRole(UserRole.USER)
       expect(limits.maxLinks).toBeDefined()
       expect(limits.maxThemes).toBeDefined()
-      expect(limits.hasAnalytics).toBeDefined()
-      expect(limits.hasCustomDomain).toBe(false)
+      expect(limits.canAccessAnalytics).toBe(false)
+      expect(limits.canCustomDomain).toBe(false)
     })
 
     it('deve retornar limites para ADMIN', () => {
       const limits = getLimitsByRole(UserRole.ADMIN)
-      expect(limits.maxLinks).toBe(-1) // Ilimitado
-      expect(limits.maxThemes).toBe(-1)
-      expect(limits.hasCustomDomain).toBe(true)
+      expect(limits.maxLinks).toBe(Infinity) // Ilimitado
+      expect(limits.maxThemes).toBe(Infinity)
+      expect(limits.canAccessAnalytics).toBe(true)
+      expect(limits.canCustomDomain).toBe(true)
     })
 
     it('deve retornar limites para AGENCY', () => {
       const limits = getLimitsByRole(UserRole.AGENCY)
-      expect(limits.maxLinks).toBe(-1)
-      expect(limits.hasAnalytics).toBe(true)
-      expect(limits.hasCustomDomain).toBe(true)
+      expect(limits.maxLinks).toBe(100)
+      expect(limits.maxThemes).toBe(50)
+      expect(limits.canAccessAnalytics).toBe(true)
+      expect(limits.canCustomDomain).toBe(false)
     })
   })
 })

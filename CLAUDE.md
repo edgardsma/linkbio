@@ -119,7 +119,7 @@ prisma/
 ├── ci.yml                    # CI pipeline (tests, lint, build, deploy) (NEW)
 └── deploy.yml                 # Deploy pipeline to Vercel (NEW)
 
-__tests__/                     # Test files (NEEDS TO BE CREATED)
+__tests__/                     # Test suite
 ├── unit/                    # Unit tests
 ├── integration/             # Integration tests
 └── e2e/                       # E2E tests
@@ -252,7 +252,7 @@ Required variables are in `.env.example`. Critical ones:
 - PostgreSQL runs on port 51213 when using Prisma Dev, or 5432 with Docker
 - Links can be reordered via drag-and-drop using dnd-kit library
 - **NEW**: The project now supports structured logging, caching, RBAC, rate limiting, and performance tracking
-- **NEW**: Tests are configured with Jest but test files need to be created
+- **NEW**: Tests are implemented across unit, integration, and E2E levels using Jest and Playwright
 - **NEW**: CI/CD is configured but needs GitHub secrets to be set up
 
 ## Quick Start

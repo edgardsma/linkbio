@@ -160,12 +160,22 @@ export default function LoginPage() {
           </form>
 
           {/* Footer */}
-          <p className="text-center text-gray-600 dark:text-gray-400 mt-6">
-            Não tem uma conta?{' '}
-            <Link href="/auth/signup" className="text-purple-600 hover:text-purple-700 font-semibold">
-              Criar conta
-            </Link>
-          </p>
+          <div className="space-y-4">
+            <p className="text-center text-gray-600 dark:text-gray-400">
+              <Link
+                href="/auth/forgot-password"
+                className="text-purple-600 hover:text-purple-700 dark:text-purple-400 font-semibold"
+              >
+                Esqueci minha senha
+              </Link>
+            </p>
+            <p className="text-center text-gray-600 dark:text-gray-400">
+              Não tem uma conta?{' '}
+              <Link href="/auth/signup" className="text-purple-600 hover:text-purple-700 font-semibold">
+                Criar conta
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

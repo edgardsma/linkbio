@@ -130,7 +130,7 @@ export async function getUserProfile(username: string) {
 
   if (!profile) {
     // Buscar do banco se não estiver em cache
-    const { prisma } = await import('@/lib/prisma')
+    const { prisma } = await import('./prisma')
     profile = await prisma.user.findUnique({
       where: { username },
       include: { links: true },

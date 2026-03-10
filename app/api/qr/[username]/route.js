@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import QRCode from 'qrcode'
-import { prisma } from '@/lib/prisma.js'
-import { qrRateLimit } from '@/lib/rate-limit.js'
+import { prisma } from '../../../lib/prisma.js'
+import { qrRateLimit } from '../../../lib/rate-limit.js'
 
 export async function GET(
   request,
@@ -46,9 +46,14 @@ export async function GET(
     )
   }
 
-  // Buscar usuário
-  const user = await prisma.user.findUnique({
-    where: { username: usernameClean },
+  // Buscar usuário (case-insensitive)
+  const user = await prisma.user.findFirst({
+    where: {
+      username: {
+        equals: usernameClean,
+        mode: 'insensitive'
+      }
+    },
   })
 
   if (!user) {

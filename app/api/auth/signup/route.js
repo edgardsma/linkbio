@@ -30,17 +30,8 @@ export async function POST(request) {
         }
       },
       password: (value) => {
-        if (!value || value.length < 8) {
-          throw new Error('A senha deve ter no mínimo 8 caracteres')
-        }
-        if (!/[A-Z]/.test(value)) {
-          throw new Error('A senha deve conter pelo menos uma letra maiúscula')
-        }
-        if (!/[a-z]/.test(value)) {
-          throw new Error('A senha deve conter pelo menos uma letra minúscula')
-        }
-        if (!/[0-9]/.test(value)) {
-          throw new Error('A senha deve conter pelo menos um número')
+        if (!value || value.length < 6) {
+          throw new Error('A senha deve ter no mínimo 6 caracteres')
         }
       },
       name: (value) => {

@@ -58,7 +58,11 @@ export default function SignupPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Erro ao criar conta')
+        if (data.details && Object.keys(data.details).length > 0) {
+          setError(Object.values(data.details).join(' • '))
+        } else {
+          setError(data.error || 'Erro ao criar conta')
+        }
         return
       }
 

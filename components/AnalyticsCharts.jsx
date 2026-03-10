@@ -85,20 +85,20 @@ export default function AnalyticsCharts() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
               title="Total de Cliques"
-              value={analytics.totalClicks}
+              value={analytics.summary?.totalClicks || 0}
               icon="🖱️"
               color="purple"
             />
             <StatCard
               title="Total de Links"
-              value={analytics.totalLinks}
+              value={analytics.summary?.totalLinks || 0}
               icon="🔗"
               color="blue"
             />
             <StatCard
-              title="Links Ativos"
-              value={analytics.totalActiveLinks}
-              icon="✅"
+              title="Média por Link"
+              value={analytics.summary?.averageClicksPerLink || 0}
+              icon="📊"
               color="green"
             />
           </div>
@@ -108,7 +108,7 @@ export default function AnalyticsCharts() {
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               Top Links
             </h3>
-            {analytics.topLinks.length === 0 ? (
+            {!analytics.topLinks || analytics.topLinks.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                 Sem dados disponíveis
               </p>
@@ -130,11 +130,6 @@ export default function AnalyticsCharts() {
                         {link.clicks} cliques
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                        {link.percentage}%
-                      </p>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -147,15 +142,15 @@ export default function AnalyticsCharts() {
       {activeTab === 'links' && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-            Cliques por Link
+            Todos os Links
           </h3>
-          {analytics.clicksByLink.length === 0 ? (
+          {!analytics.topLinks || analytics.topLinks.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-center py-4">
               Sem links disponíveis
             </p>
           ) : (
             <div className="space-y-3">
-              {analytics.clicksByLink.map((link) => (
+              {analytics.topLinks.map((link) => (
                 <div
                   key={link.id}
                   className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
@@ -188,53 +183,46 @@ export default function AnalyticsCharts() {
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               Últimas 24 Horas
             </h3>
-            <div className="h-48 flex items-end gap-1">
-              {analytics.clicksByHour.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex-1 flex flex-col items-center gap-1 group"
-                >
-                  <div className="w-full bg-purple-100 dark:bg-purple-900 rounded-t relative group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition">
-                    <div
-                      className="bg-purple-600 dark:bg-purple-400 rounded-t transition-all"
-                      style={{
-                        height: `${Math.max((item.clicks / Math.max(...analytics.clicksByHour.map(i => i.clicks), 1)) * 100, 5)}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 transform -rotate-45 origin-bottom-right">
-                    {item.hour}
-                  </span>
-                </div>
-              ))}
+            <div className="h-48 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Dados não disponíveis no momento
+              </p>
             </div>
           </div>
 
           {/* Distribuição por Dia */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-              Últimos 7 Dias
+              Últimos 30 Dias
             </h3>
-            <div className="h-48 flex items-end gap-2">
-              {analytics.clicksByDay.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex-1 flex flex-col items-center gap-2 group"
-                >
-                  <div className="w-full bg-blue-100 dark:bg-blue-900 rounded-t relative group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition">
-                    <div
-                      className="bg-blue-600 dark:bg-blue-400 rounded-t transition-all"
-                      style={{
-                        height: `${Math.max((item.clicks / Math.max(...analytics.clicksByDay.map(i => i.clicks), 1)) * 100, 5)}%`,
-                      }}
-                    />
+            {!analytics.clicksByDay || analytics.clicksByDay.length === 0 ? (
+              <div className="h-48 flex items-center justify-center">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  Sem dados disponíveis
+                </p>
+              </div>
+            ) : (
+              <div className="h-48 flex items-end gap-2">
+                {analytics.clicksByDay.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex-1 flex flex-col items-center gap-2 group"
+                  >
+                    <div className="w-full bg-blue-100 dark:bg-blue-900 rounded-t relative group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition">
+                      <div
+                        className="bg-blue-600 dark:bg-blue-400 rounded-t transition-all"
+                        style={{
+                          height: `${Math.max((item.clicks / Math.max(...analytics.clicksByDay.map(i => i.clicks), 1)) * 100, 5)}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                      {item.date}
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    {item.day}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
