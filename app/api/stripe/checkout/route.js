@@ -1,112 +1,102 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
-import Stripe from 'stripe'
 import prisma from '@/lib/prisma'
-
-// Inicializar Stripe
-const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-01-27.acacia',
-    })
-  : null
-
-// Mapeamento de planos para Price IDs do Stripe
-// OBSERVAÇÃO: Você precisa criar estes preços no Dashboard do Stripe
-// e substituir os IDs abaixo pelos seus price IDs reais
-const PLANS = {
-  starter: {
-    monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || 'price_starter_monthly_id',
-    annual: process.env.STRIPE_PRICE_STARTER_ANNUAL || 'price_starter_annual_id',
-    name: 'Starter',
-  },
-  pro: {
-    monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly_id',
-    annual: process.env.STRIPE_PRICE_PRO_ANNUAL || 'price_pro_annual_id',
-    name: 'Pro',
-  },
-  premium: {
-    monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || 'price_premium_monthly_id',
-    annual: process.env.STRIPE_PRICE_PREMIUM_ANNUAL || 'price_premium_annual_id',
-    name: 'Premium',
-  },
-}
+import { getStripeConfig, getBaseUrl } from '@/lib/stripe-config'
 
 export async function POST(request) {
+  const config = getStripeConfig()
+
+  // Verificar se o Stripe está configurado
+  if (!config.configured) {
+    return Response.json(
+      {
+        error: config.message,
+        development: process.env.NODE_ENV === 'development',
+      },
+      { status: 503 }
+    )
+  }
+
+  // Verificar sessão do usuário
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user?.id) {
+    return Response.json(
+      { error: 'Não autorizado. Faça login para continuar.' },
+      { status: 401 }
+    )
+  }
+
+  // Obter dados do corpo da requisição
+  const body = await request.json()
+  const { plan, billingCycle } = body
+
+  // Validar plano e ciclo de faturamento
+  if (!plan || !billingCycle) {
+    return Response.json(
+      { error: 'Plano e ciclo de faturamento são obrigatórios' },
+      { status: 400 }
+    )
+  }
+
+  // Validar planos válidos
+  const validPlans = ['starter', 'pro', 'premium']
+  if (!validPlans.includes(plan)) {
+    return Response.json(
+      { error: 'Plano inválido. Planos disponíveis: starter, pro, premium' },
+      { status: 400 }
+    )
+  }
+
+  const validCycles = ['monthly', 'annual']
+  if (!validCycles.includes(billingCycle)) {
+    return Response.json(
+      { error: 'Ciclo de faturamento inválido. Use: monthly ou annual' },
+      { status: 400 }
+    )
+  }
+
+  // Buscar usuário no banco de dados
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { subscription: true },
+  })
+
+  if (!user) {
+    return Response.json(
+      { error: 'Usuário não encontrado' },
+      { status: 404 }
+    )
+  }
+
   try {
-    // Verificar se o Stripe está configurado
-    if (!stripe) {
+    // Obter price ID do plano
+    const priceId = plan === 'starter'
+      ? billingCycle === 'monthly'
+        ? process.env.STRIPE_PRICE_STARTER_MONTHLY || 'price_starter_monthly'
+        : process.env.STRIPE_PRICE_STARTER_ANNUAL || 'price_starter_annual'
+      : plan === 'pro'
+      ? billingCycle === 'monthly'
+        ? process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly'
+        : process.env.STRIPE_PRICE_PRO_ANNUAL || 'price_pro_annual'
+      : plan === 'premium'
+      ? billingCycle === 'monthly'
+        ? process.env.STRIPE_PRICE_PREMIUM_MONTHLY || 'price_premium_monthly'
+        : process.env.STRIPE_PRICE_PREMIUM_ANNUAL || 'price_premium_annual'
+      : null
+
+    if (!priceId) {
       return Response.json(
-        { error: 'Stripe não está configurado. Configure STRIPE_SECRET_KEY no .env' },
-        { status: 503 }
+        { error: 'Price ID não configurado para este plano. Configure as variáveis de ambiente.' },
+        { status: 500 }
       )
     }
-
-    // Verificar sessão do usuário
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
-      return Response.json(
-        { error: 'Não autorizado. Faça login para continuar.' },
-        { status: 401 }
-      )
-    }
-
-    // Obter dados do corpo da requisição
-    const body = await request.json()
-    const { plan, billingCycle } = body
-
-    // Validar plano e ciclo de faturamento
-    if (!plan || !billingCycle) {
-      return Response.json(
-        { error: 'Plano e ciclo de faturamento são obrigatórios' },
-        { status: 400 }
-      )
-    }
-
-    if (!PLANS[plan] || !PLANS[plan][billingCycle]) {
-      return Response.json(
-        { error: 'Plano ou ciclo de faturamento inválido' },
-        { status: 400 }
-      )
-    }
-
-    // Buscar usuário no banco de dados
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: { subscription: true },
-    })
-
-    if (!user) {
-      return Response.json(
-        { error: 'Usuário não encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // Verificar se já tem assinatura ativa
-    if (user.subscription) {
-      // Se já tem assinatura ativa do mesmo plano
-      if (user.subscription.status === 'active' && user.subscription.plan === plan) {
-        return Response.json(
-          { error: 'Você já possui uma assinatura ativa deste plano' },
-          { status: 400 }
-        )
-      }
-
-      // Se está tentando fazer upgrade/downgrade, permitir
-      // O webhook vai atualizar a assinatura automaticamente
-    }
-
-    // Obter price ID do plano solicitado
-    const priceId = PLANS[plan][billingCycle]
-    const planName = PLANS[plan].name
 
     // Criar ou recuperar customer do Stripe
     let customerId = user.subscription?.stripeCustomerId
 
     if (!customerId) {
-      // Criar novo customer
-      const customer = await stripe.customers.create({
+      const customer = await config.stripe.customers.create({
         email: user.email,
         name: user.name,
         metadata: {
@@ -117,25 +107,15 @@ export async function POST(request) {
       customerId = customer.id
 
       // Salvar customer ID no banco de dados
-      if (user.subscription) {
-        await prisma.subscription.update({
-          where: { userId: user.id },
-          data: { stripeCustomerId: customerId },
-        })
-      } else {
-        await prisma.subscription.create({
-          data: {
-            userId: user.id,
-            stripeCustomerId: customerId,
-            status: 'pending',
-            plan: 'free',
-          },
-        })
-      }
+      await prisma.subscription.update({
+        where: { userId: user.id },
+        data: { stripeCustomerId: customerId },
+      })
     }
 
     // Criar sessão de checkout
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const baseUrl = getBaseUrl()
+    const checkoutSession = await config.stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -145,8 +125,8 @@ export async function POST(request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXTAUTH_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/plans?canceled=true`,
+      success_url: `${baseUrl}/dashboard/plans?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/dashboard/plans?canceled=true`,
       allow_promotion_codes: true,
       customer_update: {
         address: 'auto',
@@ -155,15 +135,15 @@ export async function POST(request) {
       metadata: {
         userId: user.id,
         username: user.username,
-        plan: plan,
-        billingCycle: billingCycle,
+        plan,
+        billingCycle,
       },
       subscription_data: {
         metadata: {
           userId: user.id,
           username: user.username,
-          plan: plan,
-          billingCycle: billingCycle,
+          plan,
+          billingCycle,
         },
       },
     })
@@ -187,79 +167,168 @@ export async function POST(request) {
 
 // Endpoint para obter informações dos planos disponíveis
 export async function GET() {
-  try {
+  const config = getStripeConfig()
+
+  if (!config.configured) {
+    // Retornar informações dos planos sem preço (Stripe não configurado)
     return Response.json({
+      configured: false,
+      message: config.message,
+      development: process.env.NODE_ENV === 'development',
       plans: {
-        starter: {
-          name: 'Starter',
-          monthly: {
-            price: 19.90,
-            currency: 'BRL',
-            priceId: process.env.STRIPE_PRICE_STARTER_MONTHLY,
-          },
-          annual: {
-            price: 199.00,
-            currency: 'BRL',
-            savings: '2 meses grátis',
-            priceId: process.env.STRIPE_PRICE_STARTER_ANNUAL,
-          },
+        free: {
+          name: 'FREE',
+          description: 'Para começar sua jornada',
+          monthly: { price: 0, savings: null },
+          annual: { price: 0, savings: null },
           features: [
             'Até 5 links',
-            'Análises básicas',
-            'Tema gratuito',
+            'Análises básicas de cliques',
+            '1 tema pré-definido',
             'Suporte por email',
+            'QR Code padrão',
           ],
+          cta: 'Começar Grátis',
+          stripePriceId: null,
+        },
+        starter: {
+          name: 'STARTER',
+          description: 'Ideal para criadores em crescimento',
+          monthly: { price: 19.90, savings: null },
+          annual: { price: 199.90, savings: 'Economize R$ 40' },
+          features: [
+            'Até 15 links',
+            'Análises completas de cliques',
+            '5 temas personalizáveis',
+            'Suporte prioritário',
+            'QR Code personalizado',
+            'Sem marca d\'água',
+          ],
+          cta: 'Assinar Starter',
+          stripePriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY || null,
+          stripePriceIdAnnual: process.env.STRIPE_PRICE_STARTER_ANNUAL || null,
         },
         pro: {
-          name: 'Pro',
-          monthly: {
-            price: 49.90,
-            currency: 'BRL',
-            priceId: process.env.STRIPE_PRICE_PRO_MONTHLY,
-          },
-          annual: {
-            price: 499.00,
-            currency: 'BRL',
-            savings: '2 meses grátis',
-            priceId: process.env.STRIPE_PRICE_PRO_ANNUAL,
-          },
+          name: 'PRO',
+          description: 'Para profissionais e negócios',
+          monthly: { price: 49.90, savings: null },
+          annual: { price: 499.90, savings: 'Economize R$ 100' },
           features: [
             'Links ilimitados',
             'Análises avançadas',
+            'Customização completa',
+            'Domínio personalizado',
+            'Suporte 24/7',
+            'API básica',
+            'Remoção de marca',
             'Todos os temas gratuitos',
-            'Remoção de marca d\'água',
-            'Suporte prioritário',
           ],
+          cta: 'Assinar PRO',
+          stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY || null,
+          stripePriceIdAnnual: process.env.STRIPE_PRICE_PRO_ANNUAL || null,
         },
         premium: {
-          name: 'Premium',
-          monthly: {
-            price: 99.90,
-            currency: 'BRL',
-            priceId: process.env.STRIPE_PRICE_PREMIUM_MONTHLY,
-          },
-          annual: {
-            price: 999.00,
-            currency: 'BRL',
-            savings: '2 meses grátis',
-            priceId: process.env.STRIPE_PRICE_PREMIUM_ANNUAL,
-          },
+          name: 'PREMIUM',
+          description: 'Para grandes empresas',
+          monthly: { price: 99.90, savings: null },
+          annual: { price: 999.90, savings: 'Economize R$ 200' },
           features: [
-            'Tudo do plano Pro',
-            'Temas exclusivos premium',
-            'Domínio personalizado',
-            'Integrações avançadas',
-            'API completa',
-            'Suporte dedicado 24/7',
+            'Tudo do plano PRO',
+            'API completa com rate limit alto',
+            'Gerente de conta dedicado',
+            'Suporte por telefone',
+            'SLA garantido de 99.9%',
+            'Integrações customizadas',
+            'White-label completo',
+            'Multi-usuários',
+            'Auditorias de segurança',
+            'Consultoria mensal',
           ],
+          cta: 'Assinar PREMIUM',
+          stripePriceId: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || null,
+          stripePriceIdAnnual: process.env.STRIPE_PRICE_PREMIUM_ANNUAL || null,
         },
       },
     })
-  } catch (error) {
-    console.error('Erro ao obter planos:', error)
-    return Response.json(
-      { error: 'Erro ao obter informações dos planos' },
-      { status: 500 }
-    )
   }
+
+  return Response.json({
+    configured: true,
+    message: config.message,
+    development: process.env.NODE_ENV === 'development',
+    plans: {
+      free: {
+        name: 'FREE',
+        description: 'Para começar sua jornada',
+        monthly: { price: 0, savings: null },
+        annual: { price: 0, savings: null },
+        features: [
+          'Até 5 links',
+          'Análises básicas de cliques',
+          '1 tema pré-definido',
+          'Suporte por email',
+          'QR Code padrão',
+        ],
+        cta: 'Começar Grátis',
+        stripePriceId: null,
+      },
+      starter: {
+        name: 'STARTER',
+        description: 'Ideal para criadores em crescimento',
+        monthly: { price: 19.90, savings: null },
+        annual: { price: 199.90, savings: 'Economize R$ 40' },
+        features: [
+          'Até 15 links',
+          'Análises completas de cliques',
+          '5 temas personalizáveis',
+          'Suporte prioritário',
+          'QR Code personalizado',
+          'Sem marca d\'água',
+        ],
+        cta: 'Assinar Starter',
+        stripePriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY || null,
+        stripePriceIdAnnual: process.env.STRIPE_PRICE_STARTER_ANNUAL || null,
+      },
+      pro: {
+        name: 'PRO',
+        description: 'Para profissionais e negócios',
+        monthly: { price: 49.90, savings: null },
+        annual: { price: 499.90, savings: 'Economize R$ 100' },
+        features: [
+          'Links ilimitados',
+          'Análises avançadas',
+          'Customização completa',
+          'Domínio personalizado',
+          'Suporte 24/7',
+          'API básica',
+          'Remoção de marca',
+          'Todos os temas gratuitos',
+        ],
+        cta: 'Assinar PRO',
+        stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY || null,
+        stripePriceIdAnnual: process.env.STRIPE_PRICE_PRO_ANNUAL || null,
+      },
+      premium: {
+        name: 'PREMIUM',
+        description: 'Para grandes empresas',
+        monthly: { price: 99.90, savings: null },
+        annual: { price: 999.90, savings: 'Economize R$ 200' },
+        features: [
+          'Tudo do plano PRO',
+          'API completa com rate limit alto',
+          'Gerente de conta dedicado',
+          'Suporte por telefone',
+          'SLA garantido de 99.9%',
+          'Integrações customizadas',
+          'White-label completo',
+          'Multi-usuários',
+          'Auditorias de segurança',
+          'Consultoria mensal',
+        ],
+        cta: 'Assinar PREMIUM',
+        stripePriceId: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || null,
+        stripePriceIdAnnual: process.env.STRIPE_PRICE_PREMIUM_ANNUAL || null,
+      },
+    },
+  })
 }

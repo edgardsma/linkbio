@@ -1,10 +1,11 @@
+import { getStripeConfig } from '@/lib/stripe-config'
+
 export async function GET() {
-  const isStripeConfigured = !!process.env.STRIPE_SECRET_KEY
+  const config = getStripeConfig()
 
   return Response.json({
-    stripeConfigured: isStripeConfigured,
-    message: isStripeConfigured
-      ? 'Stripe está configurado'
-      : 'Stripe não está configurado. Configure STRIPE_SECRET_KEY para habilitar funcionalidades de pagamento.'
+    stripeConfigured: config.configured,
+    message: config.message,
+    development: process.env.NODE_ENV === 'development',
   })
 }

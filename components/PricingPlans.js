@@ -6,12 +6,10 @@ import { useSubscription, usePlans } from '@/hooks/useSubscription'
 
 export default function PricingPlans() {
   const [billingCycle, setBillingCycle] = useState('monthly')
-  const { subscription, redirectToCheckout, openBillingPortal, stripeConfigured } = useSubscription()
-  const { plans, loading } = usePlans()
+  const { subscription, redirectToCheckout, openBillingPortal, stripeConfigured, plan: currentPlan } = useSubscription()
+  const { plans, loading: plansLoading } = usePlans()
 
-  const currentPlan = subscription?.subscription?.plan || 'free'
-
-  if (loading) {
+  if (loading || plansLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -52,7 +50,7 @@ export default function PricingPlans() {
           >
             Anual
             <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-              -20%
+              {plans.starter?.annual?.savings || plans.pro?.annual?.savings || plans.premium?.annual?.savings}
             </span>
           </button>
         </div>
@@ -71,17 +69,27 @@ export default function PricingPlans() {
               Sistema de Pagamento Indisponível
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              O sistema de pagamentos não está configurado no momento. Você pode ver os planos abaixo, mas não será possível fazer upgrade através deste sistema.
+              O sistema de pagamentos não está configurado no momento. Você pode ver os planos abaixo e suas funcionalidades, mas não será possível fazer upgrade para planos pagos através deste sistema.
             </p>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Recursos Gratuitos Disponíveis:</h4>
-              <ul className="text-left space-y-2 text-gray-600 dark:text-gray-300">
-                <li>✅ Até 5 links por página</li>
-                <li>✅ Análises básicas de cliques</li>
-                <li>✅ 1 tema pré-definido</li>
-                <li>✅ Suporte por email</li>
-                <li>✅ QR Code padrão</li>
-              </ul>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Como configurar o Stripe:</h4>
+              <ol className="text-left space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                <li>1. Acesse <a href="https://dashboard.stripe.com/" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-700 font-semibold underline">dashboard.stripe.com</a></li>
+                <li>2. Crie contas de teste ou use suas credenciais</li>
+                <li>3. Crie produtos e preços para cada plano (mensal e anual)</li>
+                <li>4. Copie os Price IDs e atualize o arquivo .env:</li>
+                <li className="font-mono text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded mt-2">
+                  STRIPE_SECRET_KEY=sk_test_xxx<br/>
+                  STRIPE_PUBLISHABLE_KEY=pk_test_xxx<br/>
+                  STRIPE_PRICE_STARTER_MONTHLY=price_xxx<br/>
+                  STRIPE_PRICE_STARTER_ANNUAL=price_xxx<br/>
+                  STRIPE_PRICE_PRO_MONTHLY=price_xxx<br/>
+                  STRIPE_PRICE_PRO_ANNUAL=price_xxx<br/>
+                  STRIPE_PRICE_PREMIUM_MONTHLY=price_xxx<br/>
+                  STRIPE_PRICE_PREMIUM_ANNUAL=price_xxx
+                </li>
+                <li>5. Reinicie o servidor de desenvolvimento</li>
+              </ol>
             </div>
             <div className="mt-6">
               <Link
@@ -100,19 +108,18 @@ export default function PricingPlans() {
 
       {/* Planos */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {plans &&
-          Object.entries(plans).map(([planId, plan]) => (
-            <PricingCard
-              key={planId}
-              planId={planId}
-              plan={plan}
-              billingCycle={billingCycle}
-              currentPlan={currentPlan}
-              stripeConfigured={stripeConfigured}
-              onSelectPlan={() => redirectToCheckout(planId, billingCycle)}
-              onManagePlan={openBillingPortal}
-            />
-          ))}
+        {plans && Object.entries(plans).map(([planId, plan]) => (
+          <PricingCard
+            key={planId}
+            planId={planId}
+            plan={plan}
+            billingCycle={billingCycle}
+            currentPlan={currentPlan}
+            stripeConfigured={stripeConfigured}
+            onSelectPlan={() => redirectToCheckout(planId, billingCycle)}
+            onManagePlan={openBillingPortal}
+          />
+        ))}
       </div>
 
       {/* Nota */}
@@ -121,6 +128,14 @@ export default function PricingPlans() {
           Todos os planos incluem atualizações gratuitas e suporte por email.
           <br />
           Cancele a qualquer momento sem taxas adicionais.
+          {!stripeConfigured && (
+            <>
+              <br />
+              <span className="text-yellow-600 font-medium">
+                Para funcionalidades de pagamento, configure o Stripe conforme as instruções acima.
+              </span>
+            </>
+          )}
         </p>
       </div>
     </div>
@@ -144,7 +159,7 @@ function PricingCard({
   const isFree = planId === 'free'
 
   const price = billingCycle === 'monthly' ? plan.monthly : plan.annual
-  const savings = billingCycle === 'annual' ? plan.annual.savings : null
+  const savings = billingCycle === 'annual' ? plan.annual?.savings : null
 
   return (
     <div
@@ -215,14 +230,14 @@ function PricingCard({
               ? 'bg-purple-600 text-white hover:bg-purple-700'
               : 'bg-gray-900 text-white hover:bg-gray-800'
           } ${!stripeConfigured && !isFree ? 'opacity-50 cursor-not-allowed' : ''}`}
-          title={!stripeConfigured && !isFree ? 'Sistema de pagamento não configurado' : ''}
+          title={!stripeConfigured && !isFree ? 'Configure o Stripe para fazer upgrade' : ''}
         >
           {isCurrentPlan
             ? 'Gerenciar Plano'
             : isUpgrade
             ? 'Fazer Upgrade'
             : isFree
-            ? 'Grátis'
+            ? 'Plano Atual (Grátis)'
             : !stripeConfigured && !isFree
             ? 'Não Disponível'
             : 'Plano Inferior'}
