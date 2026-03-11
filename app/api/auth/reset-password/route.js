@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
 import { logger } from '@/lib/logger'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 
 // POST /api/auth/reset-password - Resetar senha com token
 export async function POST(request) {

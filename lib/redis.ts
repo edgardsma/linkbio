@@ -2,10 +2,14 @@
  * Cliente Redis e Cache - Arquitetura LinkHub
  *
  * Implementa:
- * - Conexão Redis
- * - Rate limiting simplificado
+ * - Conexão Redis (com fallback gracioso quando não configurado)
+ * - Rate limiting (in-memory por padrão, Redis quando disponível)
  * - Cache de perfis públicos
  * - Cache de sessões
+ *
+ * ATENÇÃO: O rate limiting in-memory não sincroniza entre múltiplos workers.
+ * Em produção com múltiplos workers, configure REDIS_URL e REDIS_TOKEN para
+ * rate limiting distribuído consistente.
  */
 
 import { Redis } from '@upstash/redis'
@@ -22,46 +26,57 @@ export interface CachedData<T> {
   expiresAt: number
 }
 
-// Cliente Redis
+// Cliente Redis (lazy init)
 let redisInstance: Redis | null = null
 
-// Cache de rate limiting em memória para desenvolvimento
+// Cache de rate limiting in-memory (fallback sem Redis)
 const rateLimitCache: Map<string, { count: number; resetAt: number }> = new Map()
 
 /**
- * Inicializa o cliente Redis
+ * Verifica se o Redis está configurado no ambiente
  */
-export function getRedis(): Redis {
+export function isRedisConfigured(): boolean {
+  return Boolean(process.env.REDIS_URL && process.env.REDIS_TOKEN)
+}
+
+/**
+ * Inicializa o cliente Redis.
+ * Retorna null se as variáveis de ambiente não estiverem definidas.
+ */
+export function getRedis(): Redis | null {
+  if (!isRedisConfigured()) {
+    return null
+  }
+
   if (!redisInstance) {
     redisInstance = new Redis({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-      token: process.env.REDIS_TOKEN || '',
+      url: process.env.REDIS_URL!,
+      token: process.env.REDIS_TOKEN!,
     })
   }
+
   return redisInstance
 }
 
 /**
- * Verifica rate limiting (simplificado)
+ * Verifica rate limiting.
+ * Usa Redis quando disponível; caso contrário usa in-memory (não distribuído).
  */
 export async function checkRateLimit(identifier: string, limit?: number): Promise<{
   allowed: boolean
   remaining: number
   resetAt: string
 }> {
-  const limitValue = limit || 100 // padrão: 100 requisições
-
+  const limitValue = limit || 100
+  const windowMs = 60_000 // 1 minuto
   const now = Date.now()
-  const windowMs = 60000 // 1 minuto em milissegundos
 
   let data = rateLimitCache.get(identifier)
 
   if (!data || now > data.resetAt + windowMs) {
-    // Criar nova janela
     data = { count: 1, resetAt: now }
     rateLimitCache.set(identifier, data)
   } else {
-    // Incrementar contador
     data.count++
   }
 
@@ -76,21 +91,20 @@ export async function checkRateLimit(identifier: string, limit?: number): Promis
 }
 
 /**
- * Obtém dados do cache
+ * Obtém dados do cache Redis.
+ * Retorna null silenciosamente se Redis não estiver configurado ou em caso de erro.
  */
 export async function getCached<T>(config: CacheConfig): Promise<T | null> {
+  const redis = getRedis()
+  if (!redis) return null
+
   try {
-    const redis = getRedis()
     const cached = await redis.get(config.key)
 
-    if (!cached) return null
-
-    // Verificar se cached é uma string (pode ser null ou undefined)
-    if (typeof cached !== 'string') return null
+    if (!cached || typeof cached !== 'string') return null
 
     const parsed = JSON.parse(cached) as CachedData<T>
 
-    // Verificar se o cache ainda é válido
     if (Date.now() > parsed.expiresAt) {
       await redis.del(config.key)
       return null
@@ -103,18 +117,25 @@ export async function getCached<T>(config: CacheConfig): Promise<T | null> {
 }
 
 /**
- * Salva dados no cache
+ * Salva dados no cache Redis.
+ * Silenciosamente ignora se Redis não estiver configurado.
  */
 export async function setCached<T>(config: CacheConfig, data: T): Promise<void> {
   const redis = getRedis()
-  const cached: CachedData<T> = {
-    data,
-    timestamp: Date.now(),
-    expiresAt: Date.now() + config.ttl * 1000,
-  }
+  if (!redis) return
 
-  await redis.set(config.key, JSON.stringify(cached))
-  await redis.expire(config.key, config.ttl)
+  try {
+    const cached: CachedData<T> = {
+      data,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + config.ttl * 1000,
+    }
+
+    await redis.set(config.key, JSON.stringify(cached))
+    await redis.expire(config.key, config.ttl)
+  } catch {
+    // Falha de cache não deve derrubar a aplicação
+  }
 }
 
 /**
@@ -123,13 +144,12 @@ export async function setCached<T>(config: CacheConfig, data: T): Promise<void> 
 export async function getUserProfile(username: string) {
   const config: CacheConfig = {
     key: `profile:${username}`,
-    ttl: 300, // 5 minutos
+    ttl: 300,
   }
 
   let profile = await getCached<any>(config)
 
   if (!profile) {
-    // Buscar do banco se não estiver em cache
     const { prisma } = await import('./prisma')
     profile = await prisma.user.findUnique({
       where: { username },
@@ -149,7 +169,13 @@ export async function getUserProfile(username: string) {
  */
 export async function invalidateProfile(username: string): Promise<void> {
   const redis = getRedis()
-  await redis.del(`profile:${username}`)
+  if (!redis) return
+
+  try {
+    await redis.del(`profile:${username}`)
+  } catch {
+    // Ignorar erros de invalidação
+  }
 }
 
 /**
@@ -158,7 +184,7 @@ export async function invalidateProfile(username: string): Promise<void> {
 export async function getSessionData(sessionToken: string) {
   const config: CacheConfig = {
     key: `session:${sessionToken}`,
-    ttl: 900, // 15 minutos
+    ttl: 900,
   }
 
   return getCached<any>(config)
@@ -170,7 +196,7 @@ export async function getSessionData(sessionToken: string) {
 export async function setSessionData(sessionToken: string, data: any): Promise<void> {
   const config: CacheConfig = {
     key: `session:${sessionToken}`,
-    ttl: 900, // 15 minutos
+    ttl: 900,
   }
 
   await setCached(config, data)
@@ -181,23 +207,32 @@ export async function setSessionData(sessionToken: string, data: any): Promise<v
  */
 export async function clearCache(pattern: string = '*'): Promise<void> {
   const redis = getRedis()
-  const keys = await redis.keys(pattern)
+  if (!redis) return
 
-  if (keys.length > 0) {
-    await redis.del(...keys)
+  try {
+    const keys = await redis.keys(pattern)
+    if (keys.length > 0) {
+      await redis.del(...keys)
+    }
+  } catch {
+    // Ignorar erros
   }
 }
 
 /**
  * Obtém estatísticas do cache
  */
-export async function getCacheStats(): Promise<{
-  totalKeys: number
-}> {
+export async function getCacheStats(): Promise<{ totalKeys: number; redisConfigured: boolean }> {
   const redis = getRedis()
-  const keys = await redis.keys('*')
 
-  return {
-    totalKeys: keys.length,
+  if (!redis) {
+    return { totalKeys: 0, redisConfigured: false }
+  }
+
+  try {
+    const keys = await redis.keys('*')
+    return { totalKeys: keys.length, redisConfigured: true }
+  } catch {
+    return { totalKeys: 0, redisConfigured: true }
   }
 }

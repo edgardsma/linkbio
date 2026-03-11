@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { updateLinkSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma.js'
 import { requireAuth } from '@/lib/auth'
 import { createRateLimit } from '@/lib/rate-limit.js'
@@ -10,7 +11,7 @@ import { canEditOtherUser, canAccess } from '@/lib/auth.ts'
 
 // Buscar um link específico
 export async function GET(request, { params }) {
-  const requestId = getRequestId()
+  const requestId = getRequestId(request)
   const { id } = params
 
   try {
@@ -36,7 +37,7 @@ export async function GET(request, { params }) {
     }
 
     const response = NextResponse.json(link)
-    return withRequestId(response)
+    return withRequestId(response, requestId)
   } catch (error) {
     logger.error('Erro ao buscar link', error, { requestId, linkId: id })
     return NextResponse.json({ error: 'Erro ao buscar link' }, { status: 500 })
@@ -46,7 +47,7 @@ export async function GET(request, { params }) {
 // Atualizar link
 export async function PATCH(request, { params }) {
   return trackPerformance('PATCH /api/links/[id]', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
     const { id } = params
 
     try {
@@ -95,43 +96,15 @@ export async function PATCH(request, { params }) {
       }
 
       const body = await request.json()
-      const { title, url, description, icon, isActive, position } = body
 
-      // Validações
-      const errors = {}
-
-      if (title !== undefined && title.length > 100) {
-        errors.title = 'Título deve ter no máximo 100 caracteres'
+      const parsed = updateLinkSchema.safeParse(body)
+      if (!parsed.success) {
+        const errors = parsed.error.flatten().fieldErrors
+        apiLogger.warn('Dados inválidos ao atualizar link', { requestId, userId: user.id, linkId: id, errors })
+        return NextResponse.json({ error: 'Dados inválidos', details: errors }, { status: 400 })
       }
 
-      if (url !== undefined) {
-        try {
-          new URL(url)
-        } catch {
-          errors.url = 'URL inválida'
-        }
-      }
-
-      if (description !== undefined && description.length > 200) {
-        errors.description = 'Descrição deve ter no máximo 200 caracteres'
-      }
-
-      if (icon !== undefined && icon.length > 50) {
-        errors.icon = 'Ícone deve ter no máximo 50 caracteres'
-      }
-
-      if (Object.keys(errors).length > 0) {
-        apiLogger.warn('Dados inválidos ao atualizar link', {
-          requestId,
-          userId: user.id,
-          linkId: id,
-          errors,
-        })
-        return NextResponse.json(
-          { error: 'Dados inválidos', details: errors },
-          { status: 400 }
-        )
-      }
+      const { title, url, description, icon, isActive, position } = parsed.data
 
       // Atualizar link
       const updatedLink = await trackPrismaOperation('link.update', async () => {
@@ -159,7 +132,7 @@ export async function PATCH(request, { params }) {
         headers: createRateLimit.getHeaders(rateLimitResult),
       })
 
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro ao atualizar link', error, { requestId, linkId: id })
       return NextResponse.json({ error: 'Erro ao atualizar link' }, { status: 500 })
@@ -170,7 +143,7 @@ export async function PATCH(request, { params }) {
 // Deletar link
 export async function DELETE(request, { params }) {
   return trackPerformance('DELETE /api/links/[id]', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
     const { id } = params
 
     try {
@@ -235,7 +208,7 @@ export async function DELETE(request, { params }) {
         headers: createRateLimit.getHeaders(rateLimitResult),
       })
 
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro ao deletar link', error, { requestId, linkId: id })
       return NextResponse.json({ error: 'Erro ao deletar link' }, { status: 500 })

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma.js'
 import bcrypt from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
 import { withRateLimit, authRateLimit } from '@/lib/rate-limit.js'
-import { authLogger } from '@/lib/logger.js'
+import { authLogger } from '@/lib/logger'
 
 /**
  * Endpoint para obter token JWT via API

@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma.js'
-import { authLogger } from '@/lib/logger.js'
+import { authLogger } from '@/lib/logger'
 
 // Configurações de upload
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB

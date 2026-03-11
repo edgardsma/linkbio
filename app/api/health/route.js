@@ -10,7 +10,7 @@ import { getRequestId } from '@/lib/middleware'
  * Verifica: banco de dados, Redis
  */
 export async function GET(request) {
-  const requestId = getRequestId()
+  const requestId = getRequestId(request)
 
   try {
     logger.info('Health check solicitado', {

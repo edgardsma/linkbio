@@ -77,6 +77,10 @@ async function checkRedis(): Promise<HealthCheckResult> {
   try {
     const redis = getRedis()
 
+    if (!redis) {
+      return { status: 'pass', duration: 0, message: 'Redis não configurado (opcional)' }
+    }
+
     // Comando PING do Redis
     const result = await redis.ping()
 

@@ -10,32 +10,30 @@ import { v4 as uuidv4 } from 'uuid'
 export const REQUEST_ID_HEADER = 'x-request-id'
 
 /**
- * Gera ou recupera o request ID dos headers
+ * Gera ou recupera o request ID dos headers da requisição.
+ * Passe o objeto request para reutilizar o ID gerado pelo middleware.
+ * Sem request, gera um novo UUID.
  */
-export function getRequestId(): string {
-  try {
-    const headers = new Headers()
-    const requestId = headers.get(REQUEST_ID_HEADER)
-    return requestId || uuidv4()
-  } catch {
-    return uuidv4()
+export function getRequestId(request?: Request | NextRequest): string {
+  if (request) {
+    return request.headers.get(REQUEST_ID_HEADER) || uuidv4()
   }
+  return uuidv4()
 }
 
 /**
  * Adiciona request ID à resposta
  */
-export function withRequestId(response: NextResponse): NextResponse {
-  const requestId = getRequestId()
+export function withRequestId(response: NextResponse, requestId: string): NextResponse {
   response.headers.set(REQUEST_ID_HEADER, requestId)
   return response
 }
 
 /**
- * Middleware para Next.js
+ * Middleware para Next.js — injeta x-request-id em todas as requisições
  */
 export async function middleware(request: NextRequest) {
-  const requestId = uuidv4()
+  const requestId = request.headers.get(REQUEST_ID_HEADER) || uuidv4()
 
   const response = NextResponse.next()
   response.headers.set(REQUEST_ID_HEADER, requestId)

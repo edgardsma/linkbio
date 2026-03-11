@@ -4,7 +4,7 @@ import GitHubProvider from 'next-auth/providers/github'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma.js'
 import bcrypt from 'bcryptjs'
-import { authLogger } from '@/lib/logger.js'
+import { authLogger } from '@/lib/logger'
 
 const authOptions = {
   providers: [
@@ -23,10 +23,10 @@ const authOptions = {
         password: { label: 'Senha', type: 'password' },
       },
       async authorize(credentials) {
-        console.log('[AUTH] authorize chamado com email:', credentials?.email)
+        authLogger.debug('authorize chamado', { email: credentials?.email })
 
         if (!credentials?.email || !credentials?.password) {
-          console.log('[AUTH] Email ou senha vazios')
+          authLogger.warn('Tentativa de login sem email ou senha')
           return null
         }
 
@@ -34,21 +34,21 @@ const authOptions = {
           where: { email: credentials.email },
         })
 
-        console.log('[AUTH] Usuário encontrado:', !!user)
+        authLogger.debug('Usuário buscado no banco', { found: !!user })
 
         if (!user || !user.password) {
-          console.log('[AUTH] Usuário não encontrado ou sem senha')
+          authLogger.warn('Usuário não encontrado ou sem senha configurada', { email: credentials?.email })
           return null
         }
 
-        console.log('[AUTH] Comparando senha...')
+        authLogger.debug('Comparando senha')
         // Verificar senha usando bcrypt
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.password
         )
 
-        console.log('[AUTH] Senha correspondente:', passwordMatch)
+        authLogger.debug('Resultado da comparação de senha', { match: passwordMatch })
 
         if (!passwordMatch) {
           return null
@@ -62,7 +62,7 @@ const authOptions = {
           username: user.username,
         }
 
-        console.log('[AUTH] Retornando usuário:', result.email)
+        authLogger.info('Usuário autenticado com sucesso', { email: result.email })
         return result
       },
     }),

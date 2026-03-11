@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/prisma.js'
 import { apiLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 
 // Listar pagamentos e faturas do usuário
 export async function GET(request) {
-  const requestId = getRequestId()
+  const requestId = getRequestId(request)
 
   try {
     const session = await getServerSession(authOptions)
@@ -51,7 +51,7 @@ export async function GET(request) {
     })
 
     // Formatar dados
-    const formattedPayments = payments.map(payment => {
+    const formattedPayments = await Promise.all(payments.map(async payment => {
       // Tentar buscar detalhes do preço do Stripe
       let priceDetails = null
       if (payment.stripePriceId && process.env.STRIPE_SECRET_KEY) {
@@ -88,7 +88,7 @@ export async function GET(request) {
         subscription: payment.subscription,
         priceDetails,
       }
-    })
+    }))
 
     const formattedSubscriptions = subscriptions.map(subscription => {
       // Calcular dias restantes
@@ -131,7 +131,7 @@ export async function GET(request) {
       NextResponse.json({
         payments: formattedPayments,
         subscriptions: formattedSubscriptions,
-      summary: {
+        summary: {
         totalPaid: formattedPayments
           .filter(p => p.status === 'succeeded')
           .reduce((sum, p) => sum + p.amount, 0),
@@ -139,6 +139,7 @@ export async function GET(request) {
         activeSubscription: subscriptions.find(s => s.status === 'active'),
       },
       }),
+      requestId
     )
   } catch (error) {
     apiLogger.error('Erro ao carregar histórico de pagamentos', error, { requestId })

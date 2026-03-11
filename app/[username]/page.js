@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma.js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 async function getUserProfile(username) {
   try {
@@ -72,10 +73,12 @@ export default async function ProfilePage({ params }) {
         {/* Profile Header */}
         <div className="text-center mb-8">
           {user.image && (
-            <img
+            <Image
               src={user.image}
-              alt={user.name}
-              className="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg"
+              alt={user.name || user.username}
+              width={96}
+              height={96}
+              className="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg object-cover"
               style={{
                 border: `4px solid ${themeColors.primary}`,
               }}

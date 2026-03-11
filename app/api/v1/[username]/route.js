@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
 import { checkRateLimit, getUserProfile } from '@/lib/redis'
-import { logger, apiLogger } from '@/lib/logger.js'
+import { logger, apiLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance } from '@/lib/performance'
 import { getServerSession } from 'next-auth/react'
@@ -69,7 +69,7 @@ async function obterLimiteTaxaParaUsuario(username) {
  */
 export async function GET(request, { params }) {
   return trackPerformance('GET /api/v1/[username]/perfil', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
     const { username } = await params
 
     try {
@@ -159,7 +159,7 @@ export async function GET(request, { params }) {
       })
 
       const response = NextResponse.json(respostaV1)
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro na API v1 - Perfil', error, { requestId, username })
       return NextResponse.json(
@@ -177,7 +177,7 @@ export async function GET(request, { params }) {
  */
 export async function GET_ESTATISTICAS(request, { params }) {
   return trackPerformance('GET /api/v1/[username]/estatisticas', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
     const { username } = await params
 
     try {
@@ -208,7 +208,7 @@ export async function GET_ESTATISTICAS(request, { params }) {
       }
 
       const response = NextResponse.json(estatisticas)
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro na API v1 - Estatísticas', error, { requestId, username })
       return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
@@ -222,7 +222,7 @@ export async function GET_ESTATISTICAS(request, { params }) {
  * Pixel de tracking para marketing (1x1 transparente)
  */
 export async function GET_PIXEL(request, { params }) {
-  const requestId = getRequestId()
+  const requestId = getRequestId(request)
   const { username } = await params
 
   try {

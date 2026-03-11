@@ -136,8 +136,10 @@ function DashboardContent() {
             <Link href="/dashboard" className="text-purple-600 dark:text-purple-400 font-semibold">
               Dashboard
             </Link>
-            <Link href="/billing"
-<Link href="/profile" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">
+            <Link href="/billing" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">
+              Planos
+            </Link>
+            <Link href="/profile" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">
               Meu Perfil
             </Link>
             <span className="text-gray-600 dark:text-gray-300">{session.user?.name}</span>

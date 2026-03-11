@@ -110,7 +110,7 @@ export async function getHealth(): Promise<HealthResponse> {
   // Determinar status geral
   let status: 'ok' | 'degraded' | 'down' = 'ok'
 
-  if (database.status === 'fail' || redis.status === 'fail') {
+  if (database.status === 'fail') {
     status = 'down'
   } else if (redis.status === 'fail') {
     status = 'degraded'

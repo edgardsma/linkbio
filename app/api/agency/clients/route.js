@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
 import { requireAuth, UserRole, isAgencyOrAdmin } from '@/lib/auth'
-import { logger, apiLogger } from '@/lib/logger.js'
+import { logger, apiLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
 
@@ -10,7 +10,7 @@ import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
  */
 export async function GET(request) {
   return trackPerformance('GET /api/agency/clients', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
 
     try {
       apiLogger.info('Agência listar clientes solicitado', { requestId })
@@ -59,7 +59,7 @@ export async function GET(request) {
       })
 
       const response = NextResponse.json({ clientes })
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro ao listar clientes da agência', error, { requestId })
       return NextResponse.json(
@@ -75,7 +75,7 @@ export async function GET(request) {
  */
 export async function POST(request) {
   return trackPerformance('POST /api/agency/clients', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
 
     try {
       apiLogger.info('Agência criar cliente solicitado', { requestId })
@@ -199,7 +199,7 @@ export async function POST(request) {
         mensagem: 'Cliente criado com sucesso. Credenciais de acesso foram enviadas para o cliente.'
       })
 
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro ao criar cliente', error, { requestId })
       return NextResponse.json(

@@ -1,137 +1,216 @@
 /**
- * Logger Estruturado - Arquitetura LinkHub
+ * Logger Estruturado - LinkBio Brasil
  *
  * Logger centralizado com suporte a:
- * - Diferentes níveis de log
- * - Contexto estruturado
+ * - Níveis de log (DEBUG, INFO, WARN, ERROR, FATAL)
+ * - Prefixo por contexto (AUTH, API, DB, PERF)
+ * - Cores no console (desenvolvimento)
+ * - Output JSON estruturado (produção)
  * - Request ID tracking
- * - Logs formatados em JSON
  */
 
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARN = 'warn',
-  ERROR = 'error',
-}
+// ============================================
+// Tipos
+// ============================================
+
+export const LogLevel = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+  FATAL: 4,
+} as const
+
+export type LogLevelValue = (typeof LogLevel)[keyof typeof LogLevel]
 
 export interface LogEntry {
   timestamp: string
-  level: LogLevel
+  level: string
   message: string
+  prefix?: string
   context?: Record<string, unknown>
-  userId?: string
-  requestId?: string
   error?: {
     message?: string
     stack?: string
     code?: string
   }
   performance?: {
-    duration?: number
+    duration?: number | string
     operation?: string
   }
 }
 
-export interface LogContext {
-  [key: string]: unknown
+export interface LoggerOptions {
+  level?: LogLevelValue
+  prefix?: string
+  enableColors?: boolean
 }
+
+// ============================================
+// Internos
+// ============================================
+
+const colors: Record<string, string> = {
+  reset: '\x1b[0m',
+  debug: '\x1b[36m',   // cyan
+  info: '\x1b[32m',    // green
+  warn: '\x1b[33m',    // yellow
+  error: '\x1b[31m',   // red
+  fatal: '\x1b[35m',   // magenta
+}
+
+const levelNames: Record<LogLevelValue, string> = {
+  [LogLevel.DEBUG]: 'DEBUG',
+  [LogLevel.INFO]: 'INFO',
+  [LogLevel.WARN]: 'WARN',
+  [LogLevel.ERROR]: 'ERROR',
+  [LogLevel.FATAL]: 'FATAL',
+}
+
+const isProduction = process.env.NODE_ENV === 'production'
+
+// ============================================
+// Classe Logger
+// ============================================
 
 class Logger {
-  private context: LogContext = {}
+  private level: LogLevelValue
+  private prefix: string
+  private enableColors: boolean
 
-  /**
-   * Define contexto global para este logger
-   */
-  setContext(key: string, value: unknown): void {
-    this.context[key] = value
+  constructor(options: LoggerOptions = {}) {
+    this.level = options.level ?? LogLevel.INFO
+    this.prefix = options.prefix || ''
+    this.enableColors = options.enableColors !== false && !isProduction
   }
 
-  /**
-   * Limpa todo o contexto
-   */
-  clearContext(): void {
-    this.context = {}
+  private shouldLog(level: LogLevelValue): boolean {
+    return level >= this.level
   }
 
-  /**
-   * Adiciona contexto para um log específico
-   */
-  private log(level: LogLevel, message: string, context?: LogContext): void {
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      context: { ...this.context, ...context },
+  private formatMessage(
+    level: LogLevelValue,
+    message: string,
+    meta: Record<string, unknown> = {}
+  ): string {
+    const timestamp = new Date().toISOString()
+    const levelName = levelNames[level]
+    const prefix = this.prefix ? `[${this.prefix}] ` : ''
+
+    if (isProduction) {
+      // JSON estruturado em produção
+      const entry: LogEntry = { timestamp, level: levelName, message }
+      if (this.prefix) entry.prefix = this.prefix
+      if (Object.keys(meta).length > 0) entry.context = meta
+      return JSON.stringify(entry)
     }
 
-    console.log(JSON.stringify(entry))
+    let formatted = `${timestamp} ${prefix}${levelName}: ${message}`
+    if (Object.keys(meta).length > 0) {
+      formatted += `\n${JSON.stringify(meta, null, 2)}`
+    }
+    return formatted
   }
 
-  debug(message: string, context?: LogContext): void {
-    this.log(LogLevel.DEBUG, message, context)
+  private colorize(level: LogLevelValue, message: string): string {
+    if (!this.enableColors) return message
+    const color = colors[levelNames[level].toLowerCase()]
+    return `${color}${message}${colors.reset}`
   }
 
-  info(message: string, context?: LogContext): void {
-    this.log(LogLevel.INFO, message, context)
+  private log(level: LogLevelValue, message: string, meta: Record<string, unknown> = {}): void {
+    if (!this.shouldLog(level)) return
+    const formatted = this.formatMessage(level, message, meta)
+    const output = this.colorize(level, formatted)
+    if (level >= LogLevel.ERROR) {
+      console.error(output)
+    } else {
+      console.log(output)
+    }
   }
 
-  warn(message: string, context?: LogContext): void {
-    this.log(LogLevel.WARN, message, context)
+  debug(message: string, meta?: Record<string, unknown>): void {
+    this.log(LogLevel.DEBUG, message, meta)
   }
 
-  error(message: string, error?: Error | unknown, context?: LogContext): void {
-    this.log(LogLevel.ERROR, message, {
-      ...context,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        code: (error as any).code,
-      } : undefined,
-    })
+  info(message: string, meta?: Record<string, unknown>): void {
+    this.log(LogLevel.INFO, message, meta)
+  }
+
+  warn(message: string, meta?: Record<string, unknown>): void {
+    this.log(LogLevel.WARN, message, meta)
   }
 
   /**
-   * Log de performance com duração
+   * Aceita (message, error, context) ou (message, context) para compatibilidade
    */
-  performance(
-    operation: string,
-    duration: number,
-    metadata?: LogContext
-  ): void {
+  error(message: string, errorOrMeta?: Error | unknown, context?: Record<string, unknown>): void {
+    const meta: Record<string, unknown> = { ...context }
+    if (errorOrMeta instanceof Error) {
+      meta.error = { message: errorOrMeta.message, stack: errorOrMeta.stack, code: (errorOrMeta as any).code }
+    } else if (errorOrMeta && typeof errorOrMeta === 'object') {
+      Object.assign(meta, errorOrMeta)
+    }
+    this.log(LogLevel.ERROR, message, meta)
+  }
+
+  fatal(message: string, meta?: Record<string, unknown>): void {
+    this.log(LogLevel.FATAL, message, meta)
+  }
+
+  performance(operation: string, duration: number | string, meta?: Record<string, unknown>): void {
     this.info(`Performance: ${operation}`, {
-      performance: {
-        duration,
-        operation,
-      },
-      ...metadata,
+      performance: { duration: typeof duration === 'number' ? `${duration}ms` : duration, operation },
+      ...meta,
     })
   }
 
   /**
-   * Log com Request ID
+   * Log de requisição HTTP
    */
-  withRequest(requestId: string): Logger {
-    const logger = new Logger()
-    logger.setContext('requestId', requestId)
-    return logger
+  httpRequest(request: Request): void {
+    this.info('HTTP Request', {
+      method: request.method,
+      url: request.url,
+      userAgent: request.headers.get('user-agent'),
+      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+    })
   }
 
-  /**
-   * Log com User ID
-   */
-  withUser(userId: string): Logger {
-    const logger = new Logger()
-    logger.setContext('userId', userId)
-    return logger
+  httpResponse(request: Request, status: number, duration: number): void {
+    const level = status >= 500 ? LogLevel.ERROR : status >= 400 ? LogLevel.WARN : LogLevel.INFO
+    this.log(level, 'HTTP Response', {
+      method: request.method,
+      url: request.url,
+      status,
+      duration: `${duration}ms`,
+    })
+  }
+
+  auth(action: string, userId?: string, success = true): void {
+    const level = success ? LogLevel.INFO : LogLevel.WARN
+    this.log(level, `Auth: ${action}`, { userId, success })
   }
 }
 
-// Instância global
-export const logger = new Logger()
+// ============================================
+// Instâncias Exportadas
+// ============================================
 
-// Criar loggers específicos
-export const authLogger = new Logger()
-export const apiLogger = new Logger()
-export const dbLogger = new Logger()
-export const performanceLogger = new Logger()
+export const logger = new Logger({ level: LogLevel.INFO })
+
+export const authLogger = new Logger({ level: LogLevel.INFO, prefix: 'AUTH' })
+
+export const apiLogger = new Logger({ level: LogLevel.INFO, prefix: 'API' })
+
+export const dbLogger = new Logger({ level: LogLevel.WARN, prefix: 'DB' })
+
+export const performanceLogger = new Logger({ level: LogLevel.INFO, prefix: 'PERF' })
+
+export const errorLogger = new Logger({ level: LogLevel.ERROR, prefix: 'ERROR' })
+
+export function createLogger(prefix: string, level: LogLevelValue = LogLevel.INFO): Logger {
+  return new Logger({ level, prefix })
+}
+
+export { Logger }

@@ -72,7 +72,7 @@ function parseBrowser(ua) {
 
 export async function GET(request) {
   return trackPerformance('GET /api/analytics', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
 
     try {
       apiLogger.info('Analytics solicitado', { requestId })
@@ -249,7 +249,7 @@ export async function GET(request) {
       })
 
       const response = NextResponse.json(analytics)
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro ao buscar analytics', error, { requestId })
       return NextResponse.json({ error: 'Erro ao buscar analytics' }, { status: 500 })

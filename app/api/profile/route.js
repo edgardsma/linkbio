@@ -5,10 +5,11 @@ import { logger, apiLogger, dbLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
 import { requireAuth, canAccess } from '@/lib/auth.ts'
+import { updateProfileSchema } from '@/lib/validation'
 
 // Buscar perfil do usuário
 export async function GET(request) {
-  const requestId = getRequestId()
+  const requestId = getRequestId(request)
 
   try {
     apiLogger.info('Buscar perfil solicitado', { requestId })
@@ -53,7 +54,7 @@ export async function GET(request) {
     })
 
     const response = NextResponse.json(user)
-    return withRequestId(response)
+    return withRequestId(response, requestId)
   } catch (error) {
     logger.error('Erro ao buscar perfil', error, { requestId })
     return NextResponse.json({ error: 'Erro ao buscar perfil' }, { status: 500 })
@@ -63,7 +64,7 @@ export async function GET(request) {
 // Atualizar perfil do usuário
 export async function PATCH(request) {
   return trackPerformance('PATCH /api/profile', async () => {
-    const requestId = getRequestId()
+    const requestId = getRequestId(request)
 
     try {
       apiLogger.info('Atualizar perfil solicitado', { requestId })
@@ -92,26 +93,15 @@ export async function PATCH(request) {
       }
 
       const body = await request.json()
-      const { name, username, bio, image, background } = body
 
-      // Validações
-      const errors = {}
-
-      if (username && !/^[a-zA-Z0-9_-]+$/.test(username)) {
-        errors.username = 'Nome de usuário inválido. Use apenas letras, números, hífens e sublinhados.'
+      const parsed = updateProfileSchema.safeParse(body)
+      if (!parsed.success) {
+        const errors = parsed.error.flatten().fieldErrors
+        apiLogger.warn('Dados inválidos ao atualizar perfil', { requestId, userId: user.id, errors })
+        return NextResponse.json({ error: 'Dados inválidos', details: errors }, { status: 400 })
       }
 
-      if (Object.keys(errors).length > 0) {
-        apiLogger.warn('Dados inválidos ao atualizar perfil', {
-          requestId,
-          userId: user.id,
-          errors,
-        })
-        return NextResponse.json(
-          { error: 'Dados inválidos', details: errors },
-          { status: 400 }
-        )
-      }
+      const { name, username, bio, image, background } = parsed.data
 
       // Verificar se o username já está em uso (se estiver sendo alterado)
       if (username && username !== user.username) {
@@ -165,7 +155,7 @@ export async function PATCH(request) {
       })
 
       const response = NextResponse.json(updatedUser)
-      return withRequestId(response)
+      return withRequestId(response, requestId)
     } catch (error) {
       logger.error('Erro ao atualizar perfil', error, { requestId })
       return NextResponse.json({ error: 'Erro ao atualizar perfil' }, { status: 500 })

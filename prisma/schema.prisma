@@ -80,6 +80,7 @@ model Click {
 
   @@index([linkId])
   @@index([createdAt])
+  @@index([linkId, createdAt]) // analytics: queries com filtro de data por link
 }
 
 model Subscription {

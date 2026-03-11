@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma-simple'
+import { prisma } from '@/lib/prisma'
 
 // Health Check simples para Prisma
 export async function GET() {
