@@ -30,7 +30,7 @@ describe('Logger', () => {
   })
 
   it('deve registrar log error com erro', () => {
-    const spy = jest.spyOn(console, 'log')
+    const spy = jest.spyOn(console, 'error')
     const error = new Error('Test error')
     logger.error('Test error message', error)
     expect(spy).toHaveBeenCalled()
