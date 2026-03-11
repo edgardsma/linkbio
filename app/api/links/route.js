@@ -4,6 +4,8 @@ import { createLinkSchema } from '@/lib/validation'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { getRequestId } from '@/lib/middleware'
+import { createRateLimit } from '@/lib/rate-limit.js'
+import { invalidateProfile } from '@/lib/redis'
 // Buscar todos os links do usuário
 export async function GET(request) {
   const requestId = getRequestId(request)
@@ -55,6 +57,17 @@ export async function GET(request) {
 export async function POST(request) {
   const requestId = getRequestId(request)
 
+  // Rate limiting
+  const identifier = createRateLimit.getIP(request)
+  const rateLimitResult = createRateLimit.check(identifier)
+  if (rateLimitResult.limited) {
+    logger.warn('Rate limit atingido (criação de link)', { requestId, identifier })
+    return NextResponse.json(
+      { error: 'Muitas tentativas de criação. Tente novamente em 1 hora.' },
+      { status: 429, headers: createRateLimit.getHeaders(rateLimitResult) }
+    )
+  }
+
   try {
     const body = await request.json()
 
@@ -71,7 +84,7 @@ export async function POST(request) {
     }
 
     const [user, activeLinksCount] = await Promise.all([
-      prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } }),
+      prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, username: true } }),
       prisma.link.count({ where: { userId: session.user.id, isActive: true } }),
     ])
 
@@ -108,6 +121,11 @@ export async function POST(request) {
       linkId: link.id,
       title: link.title,
     })
+
+    // Invalidar cache do perfil público
+    if (user.username) {
+      await invalidateProfile(user.username)
+    }
 
     return NextResponse.json(link, { status: 201 })
   } catch (error) {

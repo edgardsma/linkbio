@@ -8,6 +8,7 @@ import { logger, apiLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
 import { canEditOtherUser, canAccess } from '@/lib/auth.ts'
+import { invalidateProfile } from '@/lib/redis'
 
 // Buscar um link específico
 export async function GET(request, { params }) {
@@ -128,6 +129,11 @@ export async function PATCH(request, { params }) {
         fieldsUpdated: Object.keys(body),
       })
 
+      // Invalidar cache do perfil público
+      if (user.username) {
+        await invalidateProfile(user.username)
+      }
+
       const response = NextResponse.json(updatedLink, {
         headers: createRateLimit.getHeaders(rateLimitResult),
       })
@@ -203,6 +209,11 @@ export async function DELETE(request, { params }) {
         userId: user.id,
         linkId: id,
       })
+
+      // Invalidar cache do perfil público
+      if (user.username) {
+        await invalidateProfile(user.username)
+      }
 
       const response = NextResponse.json({ success: true }, {
         headers: createRateLimit.getHeaders(rateLimitResult),

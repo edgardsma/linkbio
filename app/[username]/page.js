@@ -1,9 +1,14 @@
 import { prisma } from '@/lib/prisma.js'
+import { getCached, setCached } from '@/lib/redis'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 
 async function getUserProfile(username) {
+  const cacheKey = `profile:${username}`
+  const cached = await getCached({ key: cacheKey, ttl: 300 })
+  if (cached) return cached
+
   try {
     const user = await prisma.user.findUnique({
       where: { username },
@@ -14,6 +19,9 @@ async function getUserProfile(username) {
         },
       },
     })
+    if (user) {
+      await setCached({ key: cacheKey, ttl: 300 }, user)
+    }
     return user
   } catch (error) {
     console.error('Erro ao buscar perfil:', error)

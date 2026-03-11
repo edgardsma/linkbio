@@ -6,6 +6,7 @@ import { getRequestId, withRequestId } from '@/lib/middleware'
 import { trackPerformance, trackPrismaOperation } from '@/lib/performance'
 import { requireAuth, canAccess } from '@/lib/auth.ts'
 import { updateProfileSchema } from '@/lib/validation'
+import { invalidateProfile } from '@/lib/redis'
 
 // Buscar perfil do usuário
 export async function GET(request) {
@@ -153,6 +154,12 @@ export async function PATCH(request) {
         userId: user.id,
         fieldsUpdated: Object.keys(body),
       })
+
+      // Invalidar cache do perfil (username antigo e novo, caso tenha mudado)
+      await Promise.all([
+        invalidateProfile(user.username),
+        username && username !== user.username ? invalidateProfile(username) : Promise.resolve(),
+      ])
 
       const response = NextResponse.json(updatedUser)
       return withRequestId(response, requestId)
