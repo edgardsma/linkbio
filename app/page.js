@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
-import PricingPlans from '@/components/PricingPlans'
 
 export default function Home() {
   return (
@@ -197,7 +196,118 @@ export default function Home() {
       {/* Pricing Section */}
       <section id="pricing" className="py-20 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4">
-          <PricingPlans />
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Escolha o Plano{' '}
+              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                Perfeito para Você
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Comece grátis e faça upgrade quando precisar. Sem contratos, sem surpresas. Cancele a qualquer momento.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {/* FREE */}
+            <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border-2 border-gray-300 dark:border-gray-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">FREE</h3>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-5xl font-bold text-gray-900 dark:text-white">Grátis</span>
+                </div>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {['5 links', 'Analytics básicos', '1 tema pré-definido', 'Suporte por email', 'QR Code padrão'].map(f => (
+                  <li key={f} className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth/signup" className="block w-full py-3 px-6 rounded-xl font-semibold text-center bg-gray-600 hover:bg-gray-700 text-white transition-all hover:shadow-lg">
+                Começar Grátis
+              </Link>
+            </div>
+
+            {/* STARTER */}
+            <div className="relative bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-2xl p-6 border-2 border-blue-300 dark:border-blue-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">STARTER</h3>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-5xl font-bold text-gray-900 dark:text-white">R$19,90</span>
+                  <span className="text-gray-600 dark:text-gray-400">/mês</span>
+                </div>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {['15 links', 'Analytics avançados', '5 temas personalizáveis', 'Suporte prioritário', 'QR Code personalizado', 'Sem marca d\'água'].map(f => (
+                  <li key={f} className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/pricing" className="block w-full py-3 px-6 rounded-xl font-semibold text-center bg-blue-600 hover:bg-blue-700 text-white transition-all hover:shadow-lg">
+                Assinar Starter
+              </Link>
+            </div>
+
+            {/* PRO - Popular */}
+            <div className="relative bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-2xl p-6 border-2 border-purple-400 dark:border-purple-600 scale-105 shadow-2xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                  Mais Popular
+                </span>
+              </div>
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">PRO</h3>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-5xl font-bold text-gray-900 dark:text-white">R$49,90</span>
+                  <span className="text-gray-600 dark:text-gray-400">/mês</span>
+                </div>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {['Links ilimitados', 'Analytics completos', 'Domínio personalizado', 'Suporte 24/7', 'API básica', 'Temas ilimitados'].map(f => (
+                  <li key={f} className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/pricing" className="block w-full py-3 px-6 rounded-xl font-semibold text-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all hover:shadow-lg">
+                Assinar PRO
+              </Link>
+            </div>
+
+            {/* PREMIUM */}
+            <div className="relative bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-2xl p-6 border-2 border-amber-400 dark:border-amber-600 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">PREMIUM</h3>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-5xl font-bold text-gray-900 dark:text-white">R$99,90</span>
+                  <span className="text-gray-600 dark:text-gray-400">/mês</span>
+                </div>
+              </div>
+              <ul className="space-y-3 mb-6">
+                {['Tudo do PRO', 'API completa', 'Gerente de conta', 'Suporte por telefone', 'SLA 99.9%', 'White-label completo'].map(f => (
+                  <li key={f} className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/pricing" className="block w-full py-3 px-6 rounded-xl font-semibold text-center bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white transition-all hover:shadow-lg">
+                Assinar PREMIUM
+              </Link>
+            </div>
+          </div>
+
+          <div className="text-center mt-10">
+            <Link href="/pricing" className="inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 font-medium hover:underline">
+              Ver comparação completa de planos
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            </Link>
+          </div>
         </div>
       </section>
 
