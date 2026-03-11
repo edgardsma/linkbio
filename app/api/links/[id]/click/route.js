@@ -2,57 +2,42 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma.js'
 
 /**
- * API Route: Click Tracking & Redirect
- * 
- * Registra o clique e redireciona para a URL de destino
+ * Extrai geolocalização a partir dos headers da Vercel (zero custo, zero latência).
+ * Em desenvolvimento local, retorna null.
  */
+function extractGeo(request) {
+  const country = request.headers.get('x-vercel-ip-country') || null
+  const cityRaw = request.headers.get('x-vercel-ip-city') || null
+  const city = cityRaw ? decodeURIComponent(cityRaw) : null
+  return { country, city }
+}
+
 export async function GET(request, { params }) {
-    try {
-        const { id } = await params
-        const { searchParams } = new URL(request.url)
-        const url = searchParams.get('url')
+  const { searchParams } = new URL(request.url)
+  const url = searchParams.get('url')
 
-        if (!url) {
-            return NextResponse.json({ error: 'URL não fornecida' }, { status: 400 })
-        }
+  // Redireciona imediatamente — tracking é disparado sem await
+  const redirect = url
+    ? NextResponse.redirect(url)
+    : NextResponse.json({ error: 'URL não fornecida' }, { status: 400 })
 
-        // Registrar clique em background (não bloqueia o redirect)
-        try {
-            await prisma.link.update({
-                where: { id },
-                data: {
-                    clicks: {
-                        increment: 1,
-                    },
-                },
-            })
+  if (!url) return redirect
 
-            // Registrar log do clique
-            const userAgent = request.headers.get('user-agent') || null
-            const referrer = request.headers.get('referer') || null
+  // Tracking assíncrono (não bloqueia o redirect)
+  const { id } = await params
+  const userAgent = request.headers.get('user-agent') || null
+  const referrer = request.headers.get('referer') || null
+  const { country, city } = extractGeo(request)
 
-            await prisma.click.create({
-                data: {
-                    linkId: id,
-                    userAgent,
-                    referrer,
-                },
-            })
-        } catch (error) {
-            // Não bloqueia o redirect se o tracking falhar
-            console.error('Erro ao registrar clique:', error)
-        }
+  Promise.all([
+    prisma.link.update({
+      where: { id },
+      data: { clicks: { increment: 1 } },
+    }),
+    prisma.click.create({
+      data: { linkId: id, userAgent, referrer, country, city },
+    }),
+  ]).catch((err) => console.error('Erro ao registrar clique:', err))
 
-        // Redirecionar para a URL de destino
-        return NextResponse.redirect(url)
-    } catch (error) {
-        console.error('Erro no tracking de clique:', error)
-        // Em caso de erro, tenta redirecionar mesmo assim
-        const { searchParams } = new URL(request.url)
-        const url = searchParams.get('url')
-        if (url) {
-            return NextResponse.redirect(url)
-        }
-        return NextResponse.json({ error: 'Erro ao processar clique' }, { status: 500 })
-    }
+  return redirect
 }
