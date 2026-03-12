@@ -241,34 +241,34 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <section className="container mx-auto px-4 pb-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-start pt-6">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative bg-gradient-to-br ${plan.gradient} rounded-2xl p-6 border-2 ${
-                plan.popular ? `${plan.borderColor} scale-105 shadow-2xl` : `${plan.borderColor}`
+              className={`relative bg-gradient-to-br ${plan.gradient} rounded-2xl p-6 border-2 ${plan.borderColor} ${
+                plan.popular ? 'shadow-2xl ring-2 ring-purple-400 ring-offset-2' : ''
               } transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}
             >
               {/* Popular Badge */}
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
                     Mais Popular
                   </span>
                 </div>
               )}
 
               {/* Plan Name */}
-              <div className="text-center mb-6">
+              <div className={`text-center mb-6 ${plan.popular ? 'mt-3' : ''}`}>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {plan.name}
                 </h3>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+                <div className="flex items-baseline justify-center gap-1 flex-wrap">
+                  <span className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
                     {formatPrice(isAnnual ? plan.yearlyPrice : plan.monthlyPrice)}
                   </span>
                   {plan.monthlyPrice > 0 && (
-                    <span className="text-gray-600 dark:text-gray-400">
+                    <span className="text-gray-600 dark:text-gray-400 text-sm">
                       /{isAnnual ? 'ano' : 'mês'}
                     </span>
                   )}
