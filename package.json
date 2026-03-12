@@ -22,7 +22,8 @@
     "seed:themes": "curl -X POST http://localhost:3000/api/seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
+    "prisma:studio": "prisma studio --port 5555 --browser none",
+    "studio": "prisma studio --port 5555",
     "prisma:dev": "prisma dev",
     "postinstall": "prisma generate"
   },
