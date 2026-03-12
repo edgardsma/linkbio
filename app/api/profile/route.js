@@ -102,7 +102,7 @@ export async function PATCH(request) {
         return NextResponse.json({ error: 'Dados inválidos', details: errors }, { status: 400 })
       }
 
-      const { name, username, bio, image, background } = parsed.data
+      const { name, username, bio, image, background, primaryColor, secondaryColor, backgroundColor, textColor } = parsed.data
 
       // Verificar se o username já está em uso (se estiver sendo alterado)
       if (username && username !== user.username) {
@@ -135,6 +135,10 @@ export async function PATCH(request) {
             ...(bio !== undefined && { bio }),
             ...(image !== undefined && { image }),
             ...(background !== undefined && { background }),
+            ...(primaryColor !== undefined && { primaryColor }),
+            ...(secondaryColor !== undefined && { secondaryColor }),
+            ...(backgroundColor !== undefined && { backgroundColor }),
+            ...(textColor !== undefined && { textColor }),
           },
           select: {
             id: true,

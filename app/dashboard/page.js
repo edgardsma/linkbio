@@ -215,6 +215,12 @@ function DashboardContent() {
               Perfil
             </Link>
             <Link
+              href="/templates"
+              className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition font-medium"
+            >
+              Templates
+            </Link>
+            <Link
               href="/dashboard/billing"
               className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition font-medium"
             >
@@ -416,12 +422,20 @@ function DashboardContent() {
                   <p className="text-sm text-gray-400 dark:text-gray-500">@{session.user?.username}</p>
                 </div>
               </div>
-              <Link
-                href="/profile"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 rounded-xl font-semibold text-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
-              >
-                Editar Perfil
-              </Link>
+              <div className="flex gap-2">
+                <Link
+                  href="/profile"
+                  className="flex-1 flex items-center justify-center px-3 py-2.5 border-2 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 rounded-xl font-semibold text-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
+                >
+                  Editar Perfil
+                </Link>
+                <Link
+                  href="/dashboard/edit"
+                  className="flex-1 flex items-center justify-center px-3 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700 transition"
+                >
+                  🎨 Personalizar
+                </Link>
+              </div>
             </div>
 
             {/* QR Code */}
