@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -51,21 +51,21 @@ function LineChart({ data }) {
   const cW = W - padL - padR
   const cH = H - padT - padB
 
-  const maxV = Math.max(...data.map((d) => d.clicks), 1)
-  const n = data.length
-
-  const xOf = (i) => padL + (n <= 1 ? cW / 2 : (i / (n - 1)) * cW)
-  const yOf = (v) => padT + (1 - v / maxV) * cH
-
-  const pts = data.map((d, i) => [xOf(i), yOf(d.clicks)])
-  const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')
-  const areaD =
-    `M${padL},${padT + cH} ` +
-    pts.map((p) => `L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') +
-    ` L${W - padR},${padT + cH} Z`
-
-  const yTicks = [0, Math.ceil(maxV / 2), maxV]
-  const labelStep = Math.ceil(n / 7)
+  const { maxV, n, pts, lineD, areaD, yTicks, labelStep, xOf, yOf } = useMemo(() => {
+    const maxV = Math.max(...data.map((d) => d.clicks), 1)
+    const n = data.length
+    const xOf = (i) => padL + (n <= 1 ? cW / 2 : (i / (n - 1)) * cW)
+    const yOf = (v) => padT + (1 - v / maxV) * cH
+    const pts = data.map((d, i) => [xOf(i), yOf(d.clicks)])
+    const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')
+    const areaD =
+      `M${padL},${padT + cH} ` +
+      pts.map((p) => `L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') +
+      ` L${W - padR},${padT + cH} Z`
+    const yTicks = [0, Math.ceil(maxV / 2), maxV]
+    const labelStep = Math.ceil(n / 7)
+    return { maxV, n, pts, lineD, areaD, yTicks, labelStep, xOf, yOf }
+  }, [data, cW, cH, padL, padR, padT])
 
   const handleMouseMove = (e) => {
     const svgEl = e.currentTarget
