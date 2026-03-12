@@ -14,6 +14,22 @@
   }
 }
 
+/* ── Reset e base mobile ─────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  /* Remove o highlight azul/cinza ao tocar em elementos no mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  /* Scroll suave nativo */
+  scroll-behavior: smooth;
+  /* Previne bounce/overscroll desnecessário */
+  overscroll-behavior: none;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -22,7 +38,54 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+
+  /* Renderização de texto otimizada para mobile */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Previne seleção acidental de texto ao arrastar */
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+/* Permite seleção apenas em textos e inputs */
+p, h1, h2, h3, h4, h5, h6, span, a, li, td, th, label {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+  /* Previne zoom automático no iOS ao focar (font-size < 16px) */
+  font-size: 16px;
+}
+
+/* Botões e links respondem ao toque sem delay */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* ── Safe-area (notch / Dynamic Island / barra de navegação) ── */
+
+/* Header sticky — não fica atrás do notch */
+header {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+
+/* Footer / elementos fixed na parte inferior */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Container principal respeitando laterais (landscape mode) */
+.safe-x {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* ── Utilitários ─────────────────────────────────────────── */
 
 @layer utilities {
   .text-balance {
@@ -30,7 +93,8 @@ body {
   }
 }
 
-/* Estilos personalizados */
+/* ── Estilos personalizados ──────────────────────────────── */
+
 .gradient-bg {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
@@ -44,20 +108,13 @@ body {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Animações personalizadas */
+/* ── Animações ───────────────────────────────────────────── */
+
 @keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
+  0%   { transform: translate(0px, 0px) scale(1); }
+  33%  { transform: translate(30px, -50px) scale(1.1); }
+  66%  { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
 }
 
 .animate-blob {
@@ -73,18 +130,20 @@ body {
 }
 
 @keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient 3s ease infinite;
+}
+
+/* Respeita preferência de movimento reduzido (acessibilidade) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

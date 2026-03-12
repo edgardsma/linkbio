@@ -25,6 +25,7 @@
     "prisma:studio": "prisma studio --port 5555 --browser none",
     "studio": "prisma studio --port 5555",
     "prisma:dev": "prisma dev",
+    "icons": "node scripts/generate-icons.mjs",
     "postinstall": "prisma generate"
   },
   "keywords": [
