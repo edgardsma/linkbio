@@ -11,6 +11,7 @@ import MobilePreview from '@/components/MobilePreview'
 import DraggableLinkList from '@/components/DraggableLinkList'
 import OnboardingChecklist from '@/components/OnboardingChecklist'
 import UpgradeBanner from '@/components/UpgradeBanner'
+import TourGuide from '@/components/TourGuide'
 import { shouldShowOnboarding } from '@/lib/onboarding.js'
 
 // ─── Ícones SVG inline ────────────────────────────────────────────────────────
@@ -236,12 +237,14 @@ function DashboardContent() {
               Perfil
             </Link>
             <Link
+              id="tour-templates"
               href="/templates"
               className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition font-medium"
             >
               Templates
             </Link>
             <Link
+              id="tour-upgrade"
               href="/dashboard/billing"
               className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition font-medium"
             >
@@ -352,7 +355,7 @@ function DashboardContent() {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Card URL da página */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div id="tour-share-url" className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-0.5">Sua página pública</p>
                 <p className="text-purple-600 dark:text-purple-400 font-semibold truncate">{profileUrl}</p>
@@ -390,6 +393,7 @@ function DashboardContent() {
                   </p>
                 </div>
                 <button
+                  id="tour-add-link"
                   onClick={() => setShowAddModal(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold text-sm shadow-sm"
                 >
@@ -434,7 +438,7 @@ function DashboardContent() {
             </div>
 
             {/* Analytics */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div id="tour-analytics" className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
               <AnalyticsCharts />
             </div>
           </div>
@@ -485,6 +489,9 @@ function DashboardContent() {
           </div>
         </div>
       </main>
+
+      {/* ── Tour Guide ── */}
+      <TourGuide />
 
       {/* ── Modal Adicionar Link ── */}
       {showAddModal && (

@@ -147,3 +147,38 @@ header {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Tour Guide (Driver.js) ──────────────────────────────────── */
+
+.tour-popover {
+  --driver-popover-bg: white;
+  --driver-popover-border-color: #e5e7eb;
+  --driver-popover-color: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tour-popover {
+    --driver-popover-bg: #1f2937;
+    --driver-popover-border-color: #374151;
+    --driver-popover-color: #f9fafb;
+  }
+}
+
+/* Animação lenta de bounce para o botão flutuante do tour */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(-8px);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s infinite;
+}
+

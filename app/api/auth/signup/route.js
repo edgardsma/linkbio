@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma.js'
 import bcrypt from 'bcryptjs'
 import { validateData, ValidationError } from '@/lib/validation.js'
 import { authRateLimit } from '@/lib/rate-limit.js'
+import { sendWelcomeEmail } from '@/lib/email.js'
 
 export async function POST(request) {
   // Aplicar rate limiting
@@ -146,6 +147,11 @@ export async function POST(request) {
         status: 'active',
         plan: 'free',
       },
+    })
+
+    // Enviar email de boas-vindas (não bloqueia o fluxo em caso de erro)
+    sendWelcomeEmail({ name, email, username }).catch(err => {
+      console.error('Erro ao enviar email de boas-vindas:', err)
     })
 
     return NextResponse.json(
