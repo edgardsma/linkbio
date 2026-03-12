@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getHealthSimple } from '@/lib/health-simple'
+import { getHealthSimple } from '@/lib/health'
 import { logger } from '@/lib/logger'
 import { getRequestId } from '@/lib/middleware'
 
