@@ -8,31 +8,32 @@ datasource db {
 }
 
 model User {
-  id              String        @id @default(cuid())
-  email           String        @unique
-  emailVerified   DateTime?
-  name            String?
-  username        String        @unique
-  password        String?
-  image           String?
-  bio             String?
-  background      String?
-  primaryColor    String        @default("#667eea")
-  secondaryColor  String        @default("#764ba2")
-  backgroundColor String        @default("#f9fafb")
-  textColor       String        @default("#111827")
-  buttonStyle     String        @default("rounded")
-  fontFamily      String        @default("inter")
-  themeId         String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  role            String        @default("user")
-  agencyId        String?
-  accounts        Account[]
-  links           Link[]
-  sessions        Session[]
-  subscription    Subscription?
-  theme           Theme?        @relation(fields: [themeId], references: [id])
+  id                  String        @id @default(cuid())
+  email               String        @unique
+  emailVerified        DateTime?
+  name                String?
+  username            String        @unique
+  password            String?
+  image               String?
+  bio                 String?
+  background          String?
+  primaryColor        String        @default("#667eea")
+  secondaryColor      String        @default("#764ba2")
+  backgroundColor     String        @default("#f9fafb")
+  textColor           String        @default("#111827")
+  buttonStyle         String        @default("rounded")
+  fontFamily          String        @default("inter")
+  themeId             String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  role                String        @default("user")
+  agencyId            String?
+  onboardingDismissed Boolean       @default(false)
+  accounts            Account[]
+  links               Link[]
+  sessions            Session[]
+  subscription         Subscription?
+  theme               Theme?        @relation(fields: [themeId], references: [id])
   passwordResetTokens PasswordResetToken[]
 }
 

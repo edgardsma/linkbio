@@ -9,6 +9,9 @@ import EditLinkModal from '@/components/EditLinkModal'
 import LinkTypeSelector, { getLinkPlaceholder, formatLinkUrl } from '@/components/LinkTypeSelector'
 import MobilePreview from '@/components/MobilePreview'
 import DraggableLinkList from '@/components/DraggableLinkList'
+import OnboardingChecklist from '@/components/OnboardingChecklist'
+import UpgradeBanner from '@/components/UpgradeBanner'
+import { shouldShowOnboarding } from '@/lib/onboarding.js'
 
 // ─── Ícones SVG inline ────────────────────────────────────────────────────────
 
@@ -88,6 +91,9 @@ function DashboardContent() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingLink, setEditingLink] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [userProfile, setUserProfile] = useState(null)
+  const [onboardingStatus, setOnboardingStatus] = useState(null)
+  const [showOnboarding, setShowOnboarding] = useState(true)
 
   const fetchLinks = useCallback(async () => {
     try {
@@ -106,6 +112,21 @@ function DashboardContent() {
   useEffect(() => {
     if (session?.user?.id) fetchLinks()
   }, [session, fetchLinks])
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/user')
+        .then(res => res.json())
+        .then(data => {
+          setUserProfile(data.user)
+          setOnboardingStatus(data.onboarding)
+          if (!shouldShowOnboarding(data.onboarding, data.user.onboardingDismissed)) {
+            setShowOnboarding(false)
+          }
+        })
+        .catch(err => console.error('Erro ao buscar perfil:', err))
+    }
+  }, [session])
 
   const handleToggleLink = async (linkId, isActive) => {
     try {
@@ -257,6 +278,11 @@ function DashboardContent() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
+        {/* ── Banner de Upgrade ── */}
+        {userProfile?.subscription && (
+          <UpgradeBanner currentPlan={userProfile.subscription.plan} />
+        )}
+
         {/* ── Boas-vindas ── */}
         <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-blue-500 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -309,6 +335,15 @@ function DashboardContent() {
             gradient="bg-gradient-to-br from-emerald-500 to-emerald-700"
           />
         </div>
+
+        {/* ── Checklist de Onboarding ── */}
+        {showOnboarding && onboardingStatus && (
+          <OnboardingChecklist
+            status={onboardingStatus}
+            onDismiss={() => setShowOnboarding(false)}
+            userId={session.user.id}
+          />
+        )}
 
         {/* ── Conteúdo Principal ── */}
         <div className="grid lg:grid-cols-3 gap-6">
