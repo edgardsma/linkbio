@@ -1,151 +1,206 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { getOnboardingProgress } from '@/lib/onboarding'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 
-// ─── Tipos (inline para evitar TypeScript) ────────────────────────────────────
+const STEPS = [
+  {
+    id: 1,
+    title: 'Adicionar foto de perfil',
+    description: 'Coloque uma foto para as pessoas te reconhecerem',
+    icon: '📸',
+    action: '/dashboard/profile',
+  },
+  {
+    id: 2,
+    title: 'Adicionar primeiro link',
+    description: 'Comece adicionando um link importante',
+    icon: '🔗',
+    action: '/dashboard',
+  },
+  {
+    id: 3,
+    title: 'Escolher template',
+    description: 'Personalize o visual da sua página',
+    icon: '🎨',
+    action: '/templates',
+  },
+  {
+    id: 4,
+    title: 'Compartilhar perfil',
+    description: 'Divulgue sua página nas redes sociais',
+    icon: '📤',
+    action: null,
+    copyAction: true,
+  },
+  {
+    id: 5,
+    title: 'Conectar rede social',
+    description: 'Adicione links do Instagram, TikTok, etc.',
+    icon: '📱',
+    action: '/dashboard',
+  },
+  {
+    id: 6,
+    title: 'Ativar plano Pro',
+    description: 'Desbloqueie recursos avançados',
+    icon: '⭐',
+    action: '/dashboard/billing',
+    isPremium: true,
+  },
+]
 
-// ─── Ícones ────────────────────────────────────────────────────────────────
+export default function OnboardingChecklist({ user }) {
+  const { data: session } = useSession()
+  const [completedSteps, setCompletedSteps] = useState([])
+  const [dismissed, setDismissed] = useState(false)
 
-const IconClose = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-)
+  useEffect(() => {
+    if (user?.onboardingDismissed) {
+      setDismissed(true)
+    }
 
-const IconCheck = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-)
+    // Verificar quais etapas estão completas
+    const steps = []
+    
+    // Etapa 1: Foto de perfil
+    if (user?.image) {
+      steps.push(1)
+    }
 
-const IconProgress = () => (
-  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-  </svg>
-)
+    // Etapa 2: Primeiro link
+    if (user?.links && user.links.length > 0) {
+      steps.push(2)
+    }
 
-// ─── Componente ─────────────────────────────────────────────────────────────
+    // Etapa 3: Template escolhido
+    if (user?.themeId) {
+      steps.push(3)
+    }
 
-export default function OnboardingChecklist({
-  status,
-  onDismiss,
-  userId,
-}) {
-  const [closing, setClosing] = useState(false)
-
-  const progress = getOnboardingProgress(status)
+    setCompletedSteps(steps)
+  }, [user])
 
   const handleDismiss = async () => {
-    if (!status.canDismiss) return
-    setClosing(true)
-    await fetch('/api/onboarding/dismiss', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    })
-    setTimeout(() => onDismiss(), 300)
+    try {
+      await fetch('/api/onboarding/dismiss', {
+        method: 'POST',
+      })
+      setDismissed(true)
+    } catch (error) {
+      console.error('Erro ao dismiss onboarding:', error)
+    }
   }
 
-  if (status.isComplete) return null
+  const handleCopyProfileLink = async () => {
+    const url = `${window.location.origin}/${user.username}`
+    try {
+      await navigator.clipboard.writeText(url)
+      alert('Link copiado para a área de transferência!')
+    } catch (error) {
+      alert('Erro ao copiar link')
+    }
+  }
+
+  const progress = (completedSteps.length / STEPS.length) * 100
+
+  // Se dismissed ou todas completas, não mostrar
+  if (dismissed || completedSteps.length === STEPS.length) {
+    return null
+  }
 
   return (
-    <div className={`bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl border-2 border-purple-200 dark:border-purple-800 p-5 transition-all duration-300 ${closing ? 'opacity-0 scale-95' : ''}`}>
-      {/* Header */}
+    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <span className="text-2xl">🚀</span>
-            Configure sua página
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Complete {status.completedCount} de {status.totalCount} passos para maximizar seu perfil
+          <h2 className="text-xl font-bold mb-1">Complete seu perfil</h2>
+          <p className="text-white/80 text-sm">
+            Siga as etapas para maximizar sua página
           </p>
         </div>
-        {status.canDismiss && (
-          <button
-            onClick={handleDismiss}
-            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
-            title="Fechar"
-          >
-            <IconClose />
-          </button>
-        )}
+        <button
+          onClick={handleDismiss}
+          className="text-white/60 hover:text-white transition-colors"
+          aria-label="Fechar"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       {/* Barra de progresso */}
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4 overflow-hidden">
-        <div
-          className="bg-gradient-to-r from-purple-600 to-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${progress}%` }}
-        />
+      <div className="mb-6">
+        <div className="flex justify-between text-sm mb-2">
+          <span>Progresso</span>
+          <span className="font-semibold">{completedSteps.length}/{STEPS.length}</span>
+        </div>
+        <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-white rounded-full transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
       {/* Lista de etapas */}
-      <div className="space-y-2">
-        {status.steps.map((step) => (
-          <Link
-            key={step.id}
-            href={step.action || '#'}
-            onClick={(e) => {
-              if (!step.action) e.preventDefault()
-            }}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
-              step.completed
-                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-sm'
-            }`}
-          >
-            {/* Ícone */}
+      <div className="space-y-3">
+        {STEPS.map((step) => {
+          const isCompleted = completedSteps.includes(step.id)
+          
+          return (
             <div
-              className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                step.completed
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+              key={step.id}
+              className={`flex items-start gap-4 p-4 rounded-xl transition-all ${
+                isCompleted
+                  ? 'bg-white/20'
+                  : 'bg-white/10 hover:bg-white/15'
               }`}
             >
-              {step.completed ? <IconCheck /> : step.icon}
-            </div>
-
-            {/* Texto */}
-            <div className="flex-1 min-w-0">
-              <p
-                className={`font-medium ${
-                  step.completed
-                    ? 'text-green-700 dark:text-green-400 line-through'
-                    : 'text-gray-900 dark:text-white'
+              {/* Ícone */}
+              <div
+                className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                  isCompleted ? 'bg-green-500' : 'bg-white/20'
                 }`}
               >
-                {step.title}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                {step.description}
-              </p>
+                {isCompleted ? '✓' : step.icon}
+              </div>
+
+              {/* Conteúdo */}
+              <div className="flex-grow">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold">{step.title}</h3>
+                    <p className="text-sm text-white/80">{step.description}</p>
+                  </div>
+                  {step.isPremium && (
+                    <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full font-semibold">
+                      PRO
+                    </span>
+                  )}
+                </div>
+
+                {/* Ação */}
+                {step.copyAction ? (
+                  <button
+                    onClick={handleCopyProfileLink}
+                    className="mt-3 px-4 py-2 bg-white text-purple-600 rounded-lg font-semibold text-sm hover:bg-white/90 transition-colors"
+                  >
+                    Copiar Link
+                  </button>
+                ) : !isCompleted && step.action ? (
+                  <a
+                    href={step.action}
+                    className="inline-block mt-3 px-4 py-2 bg-white text-purple-600 rounded-lg font-semibold text-sm hover:bg-white/90 transition-colors"
+                  >
+                    Fazer Agora
+                  </a>
+                ) : null}
+              </div>
             </div>
-
-            {/* Seta para etapas não completadas */}
-            {step.action && !step.completed && (
-              <svg
-                className="w-5 h-5 text-gray-400 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            )}
-          </Link>
-        ))}
+          )
+        })}
       </div>
-
-      {/* Footer - aviso se não pode fechar */}
-      {!status.canDismiss && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-          Complete pelo menos 3 etapas para poder fechar este checklist
-        </p>
-      )}
     </div>
   )
 }

@@ -1,165 +1,179 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 
-const FONTS = [
-  { id: 'inter',      label: 'Inter',            sample: 'Aa',  style: 'font-sans' },
-  { id: 'poppins',    label: 'Poppins',           sample: 'Aa',  style: 'font-sans' },
-  { id: 'montserrat', label: 'Montserrat',        sample: 'Aa',  style: 'font-sans' },
-  { id: 'playfair',   label: 'Playfair Display',  sample: 'Aa',  style: 'font-serif' },
-  { id: 'oswald',     label: 'Oswald',            sample: 'Aa',  style: 'font-sans' },
+const FONT_FAMILIES = [
+  { value: 'inter', label: 'Inter (Moderno)' },
+  { value: 'poppins', label: 'Poppins (Geométrico)' },
+  { value: 'playfair', label: 'Playfair Display (Elegante)' },
+  { value: 'montserrat', label: 'Montserrat (Profissional)' },
+  { value: 'oswald', label: 'Oswald (Destaque)' },
+  { value: 'roboto', label: 'Roboto (Clássico)' },
+  { value: 'open-sans', label: 'Open Sans (Legível)' },
+  { value: 'lato', label: 'Lato (Versátil)' },
 ]
 
 const BUTTON_STYLES = [
-  {
-    id: 'rounded',
-    label: 'Arredondado',
-    preview: 'rounded-full',
-  },
-  {
-    id: 'square',
-    label: 'Quadrado',
-    preview: 'rounded-md',
-  },
-  {
-    id: 'outline',
-    label: 'Contorno',
-    preview: 'rounded-full border-2',
-  },
+  { value: 'rounded', label: 'Arredondado' },
+  { value: 'square', label: 'Quadrado' },
+  { value: 'outline', label: 'Contorno' },
 ]
 
-function ColorField({ label, value, onChange }) {
+export default function VisualEditor({ user, onSave }) {
+  const { data: session } = useSession()
+  const [isLoading, setIsLoading] = useState(false)
+
+  const [settings, setSettings] = useState({
+    primaryColor: user.primaryColor || '#667eea',
+    secondaryColor: user.secondaryColor || '#764ba2',
+    backgroundColor: user.backgroundColor || '#f9fafb',
+    textColor: user.textColor || '#111827',
+    buttonStyle: user.buttonStyle || 'rounded',
+    fontFamily: user.fontFamily || 'inter',
+  })
+
+  const handleChange = (field, value) => {
+    setSettings((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSave = async () => {
+    if (!session?.user?.id) {
+      alert('Faça login para salvar as alterações')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/profile/theme', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+
+      if (response.ok) {
+        alert('Tema salvo com sucesso!')
+        if (onSave) onSave(settings)
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Erro ao salvar tema')
+      }
+    } catch (error) {
+      alert('Erro ao salvar tema')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
-    <div className="flex items-center justify-between gap-3">
-      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">{label}</label>
-      <div className="flex items-center gap-2">
+    <div className="space-y-6">
+      {/* Cores */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Cores</h3>
+        <div className="space-y-4">
+          <ColorInput
+            label="Cor Principal"
+            value={settings.primaryColor}
+            onChange={(value) => handleChange('primaryColor', value)}
+          />
+          <ColorInput
+            label="Cor Secundária"
+            value={settings.secondaryColor}
+            onChange={(value) => handleChange('secondaryColor', value)}
+          />
+          <ColorInput
+            label="Cor de Fundo"
+            value={settings.backgroundColor}
+            onChange={(value) => handleChange('backgroundColor', value)}
+          />
+          <ColorInput
+            label="Cor do Texto"
+            value={settings.textColor}
+            onChange={(value) => handleChange('textColor', value)}
+          />
+        </div>
+      </div>
+
+      {/* Estilo dos Botões */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Estilo dos Botões</h3>
+        <div className="grid grid-cols-3 gap-4">
+          {BUTTON_STYLES.map((style) => (
+            <button
+              key={style.value}
+              onClick={() => handleChange('buttonStyle', style.value)}
+              className={`p-4 border-2 rounded-lg transition-all ${
+                settings.buttonStyle === style.value
+                  ? 'border-purple-600 bg-purple-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div
+                className="w-full h-10 rounded-lg"
+                style={{
+                  background: `linear-gradient(135deg, ${settings.primaryColor} 0%, ${settings.secondaryColor} 100%)`,
+                  borderRadius:
+                    style.value === 'rounded'
+                      ? '8px'
+                      : style.value === 'square'
+                        ? '4px'
+                        : '8px',
+                  border: style.value === 'outline' ? '2px solid ' + settings.primaryColor : 'none',
+                }}
+              />
+              <p className="text-sm mt-2 font-medium text-gray-700">{style.label}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Fonte */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Fonte</h3>
+        <select
+          value={settings.fontFamily}
+          onChange={(e) => handleChange('fontFamily', e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+        >
+          {FONT_FAMILIES.map((font) => (
+            <option key={font.value} value={font.value}>
+              {font.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Botão Salvar */}
+      <button
+        onClick={handleSave}
+        disabled={isLoading}
+        className="w-full py-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+      </button>
+    </div>
+  )
+}
+
+function ColorInput({ label, value, onChange }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <div className="flex items-center gap-3">
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-9 h-9 rounded-lg cursor-pointer border border-gray-200 dark:border-gray-700 p-0.5 bg-transparent"
+          className="w-12 h-12 rounded cursor-pointer border border-gray-300"
         />
         <input
           type="text"
           value={value}
-          onChange={(e) => /^#[0-9A-Fa-f]{0,6}$/.test(e.target.value) && onChange(e.target.value)}
-          className="w-24 text-xs px-2 py-2 border border-gray-200 dark:border-gray-700 rounded-lg font-mono dark:bg-gray-800 dark:text-white uppercase"
-          maxLength={7}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+          placeholder="#667eea"
         />
       </div>
-    </div>
-  )
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="border-b border-gray-100 dark:border-gray-800 pb-5 mb-5">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
-        {title}
-      </h3>
-      {children}
-    </div>
-  )
-}
-
-export default function VisualEditor({ initialTheme = {}, onThemeChange, onSave, saving }) {
-  const [theme, setTheme] = useState({
-    primaryColor: '#667eea',
-    secondaryColor: '#764ba2',
-    backgroundColor: '#f9fafb',
-    textColor: '#111827',
-    buttonStyle: 'rounded',
-    fontFamily: 'inter',
-    ...initialTheme,
-  })
-
-  const update = useCallback(
-    (key, value) => {
-      const next = { ...theme, [key]: value }
-      setTheme(next)
-      onThemeChange?.(next)
-    },
-    [theme, onThemeChange]
-  )
-
-  const btnBaseStyle = (style) => ({
-    background:
-      style === 'outline'
-        ? 'transparent'
-        : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
-    borderColor: style === 'outline' ? theme.primaryColor : 'transparent',
-    color: style === 'outline' ? theme.primaryColor : '#fff',
-  })
-
-  return (
-    <div className="w-full space-y-0">
-      {/* Cores */}
-      <Section title="Cores">
-        <div className="space-y-3">
-          <ColorField label="Cor primária"    value={theme.primaryColor}    onChange={(v) => update('primaryColor', v)} />
-          <ColorField label="Cor secundária"  value={theme.secondaryColor}  onChange={(v) => update('secondaryColor', v)} />
-          <ColorField label="Fundo"           value={theme.backgroundColor} onChange={(v) => update('backgroundColor', v)} />
-          <ColorField label="Texto"           value={theme.textColor}       onChange={(v) => update('textColor', v)} />
-        </div>
-      </Section>
-
-      {/* Estilo de botão */}
-      <Section title="Estilo dos Botões">
-        <div className="grid grid-cols-3 gap-2">
-          {BUTTON_STYLES.map((bs) => (
-            <button
-              key={bs.id}
-              type="button"
-              onClick={() => update('buttonStyle', bs.id)}
-              className={`p-3 rounded-xl border-2 transition flex flex-col items-center gap-2 ${
-                theme.buttonStyle === bs.id
-                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
-              }`}
-            >
-              <div
-                className={`w-full text-xs py-1.5 text-center font-medium ${bs.preview}`}
-                style={btnBaseStyle(bs.id)}
-              >
-                Link
-              </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">{bs.label}</span>
-            </button>
-          ))}
-        </div>
-      </Section>
-
-      {/* Fonte */}
-      <Section title="Fonte">
-        <div className="space-y-2">
-          {FONTS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => update('fontFamily', f.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 transition ${
-                theme.fontFamily === f.id
-                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
-              }`}
-            >
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{f.label}</span>
-              <span className={`text-lg text-gray-500 ${f.style}`}>{f.sample}</span>
-            </button>
-          ))}
-        </div>
-      </Section>
-
-      {/* Botão Salvar */}
-      {onSave && (
-        <button
-          onClick={() => onSave(theme)}
-          disabled={saving}
-          className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-        >
-          {saving ? 'Salvando...' : 'Salvar personalização'}
-        </button>
-      )}
     </div>
   )
 }

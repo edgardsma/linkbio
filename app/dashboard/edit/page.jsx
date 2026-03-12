@@ -1,313 +1,243 @@
-'use client'
-
-import { useSession } from 'next-auth/react'
-import { useState, useEffect, useCallback, Suspense } from 'react'
-import Link from 'next/link'
+import { prisma } from '@/lib/prisma.js'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { redirect } from 'next/navigation'
 import VisualEditor from '@/components/VisualEditor'
-import BackgroundPicker from '@/components/BackgroundPicker'
 
-const FONT_MAP = {
-  inter:      '"Inter", sans-serif',
-  poppins:    '"Poppins", sans-serif',
-  montserrat: '"Montserrat", sans-serif',
-  playfair:   '"Playfair Display", serif',
-  oswald:     '"Oswald", sans-serif',
-}
+export const dynamic = 'force-dynamic'
 
-// ─── Preview de perfil em tempo real ─────────────────────────────────────────
-
-function LivePreview({ theme, links, user }) {
-  const colors = {
-    primary:    theme.primaryColor    || '#667eea',
-    secondary:  theme.secondaryColor  || '#764ba2',
-    background: theme.backgroundColor || '#f9fafb',
-    text:       theme.textColor       || '#111827',
+export default async function EditPage() {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id) {
+    redirect('/auth/login')
   }
 
-  const btnClass = {
-    rounded: 'rounded-full',
-    square:  'rounded-lg',
-    outline: 'rounded-full border-2',
-  }[theme.buttonStyle] || 'rounded-full'
-
-  const btnStyle =
-    theme.buttonStyle === 'outline'
-      ? { borderColor: colors.primary, color: colors.primary, backgroundColor: 'transparent' }
-      : { background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: '#fff' }
-
-  const bg = theme.background
-    ? theme.background.startsWith('linear-gradient')
-      ? { backgroundImage: theme.background }
-      : { backgroundImage: `url(${theme.background})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    : { backgroundColor: colors.background }
-
-  return (
-    /* Moldura de celular */
-    <div className="mx-auto" style={{ width: 300 }}>
-      <div className="relative rounded-[2.5rem] overflow-hidden border-[6px] border-gray-800 dark:border-gray-700 shadow-2xl" style={{ height: 580 }}>
-        {/* Status bar */}
-        <div className="bg-gray-900 text-white text-[10px] flex justify-between px-5 py-1.5">
-          <span>9:41</span>
-          <span>●●●</span>
-        </div>
-
-        {/* Conteúdo */}
-        <div className="h-full overflow-y-auto pb-6" style={{ ...bg, fontFamily: FONT_MAP[theme.fontFamily] || 'sans-serif' }}>
-          {/* Faixa gradiente no topo */}
-          <div
-            className="h-24"
-            style={{ background: `linear-gradient(180deg, ${colors.primary}30, transparent)` }}
-          />
-
-          <div className="px-5 -mt-10 text-center">
-            {/* Avatar */}
-            <div
-              className="w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-2xl font-bold border-4 bg-white overflow-hidden"
-              style={{ borderColor: colors.primary }}
-            >
-              {user?.image
-                ? <img src={user.image} alt="" className="w-full h-full object-cover" />
-                : (user?.name?.[0] || 'U').toUpperCase()
-              }
-            </div>
-            <p className="font-bold text-sm mb-0.5" style={{ color: colors.text }}>
-              {user?.name || 'Seu Nome'}
-            </p>
-            <p className="text-xs opacity-60 mb-4" style={{ color: colors.text }}>
-              {user?.bio || 'Sua bio aparece aqui'}
-            </p>
-
-            {/* Links */}
-            <div className="space-y-2.5">
-              {(links.length > 0 ? links.slice(0, 5) : [
-                { id: '1', title: 'Meu Site', isActive: true },
-                { id: '2', title: 'Instagram', isActive: true },
-                { id: '3', title: 'WhatsApp', isActive: true },
-              ]).filter(l => l.isActive).map((link) => (
-                <div
-                  key={link.id}
-                  className={`w-full py-2.5 px-4 text-xs font-semibold text-center ${btnClass}`}
-                  style={btnStyle}
-                >
-                  {link.icon && <span className="mr-1.5">{link.icon}</span>}
-                  {link.title}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Indicador */}
-      <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-3">Preview em tempo real</p>
-    </div>
-  )
-}
-
-// ─── Página principal ─────────────────────────────────────────────────────────
-
-const TABS = [
-  { id: 'visual',     label: 'Visual' },
-  { id: 'background', label: 'Fundo' },
-  { id: 'templates',  label: 'Templates' },
-]
-
-function EditContent() {
-  const { data: session } = useSession()
-  const [theme, setTheme] = useState({
-    primaryColor: '#667eea',
-    secondaryColor: '#764ba2',
-    backgroundColor: '#f9fafb',
-    textColor: '#111827',
-    buttonStyle: 'rounded',
-    fontFamily: 'inter',
-    background: '',
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      links: {
+        where: { isActive: true },
+        orderBy: { position: 'asc' },
+      },
+    },
   })
-  const [links, setLinks] = useState([])
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState('visual')
-  const [loading, setLoading] = useState(true)
 
-  // Carregar tema e links atuais
-  useEffect(() => {
-    if (!session?.user?.id) return
-    Promise.all([
-      fetch('/api/profile/theme').then(r => r.json()),
-      fetch('/api/links').then(r => r.json()),
-      fetch('/api/profile').then(r => r.json()),
-    ]).then(([themeData, linksData, profileData]) => {
-      setTheme({
-        primaryColor:    themeData.primaryColor    || '#667eea',
-        secondaryColor:  themeData.secondaryColor  || '#764ba2',
-        backgroundColor: themeData.backgroundColor || '#f9fafb',
-        textColor:       themeData.textColor       || '#111827',
-        buttonStyle:     themeData.buttonStyle     || 'rounded',
-        fontFamily:      themeData.fontFamily      || 'inter',
-        background:      profileData.background    || '',
-      })
-      setLinks(linksData || [])
-    }).finally(() => setLoading(false))
-  }, [session])
-
-  const handleSave = async (newTheme) => {
-    setSaving(true)
-    setSaved(false)
-    try {
-      const res = await fetch('/api/profile/theme', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTheme),
-      })
-      if (res.ok) {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 3000)
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleThemeChange = useCallback((next) => {
-    setTheme(prev => ({ ...prev, ...next }))
-  }, [])
-
-  const handleBackgroundSave = (url) => {
-    setTheme(prev => ({ ...prev, background: url }))
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600" />
-      </div>
-    )
+  if (!user) {
+    redirect('/auth/login')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <div>
-              <h1 className="font-bold text-gray-900 dark:text-white">Editor Visual</h1>
-              <p className="text-xs text-gray-400 dark:text-gray-500">Personalize sua página</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/${session?.user?.username}`}
-              target="_blank"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 rounded-lg transition"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              Ver página
-            </Link>
-            {saved && (
-              <span className="text-sm text-green-600 font-medium flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Salvo
-              </span>
-            )}
-          </div>
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">Personalizar Página</h1>
         </div>
-      </header>
+      </div>
 
-      {/* Split Screen */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex flex-col lg:flex-row gap-8">
-
-          {/* ── Painel de edição ── */}
-          <div className="lg:w-80 xl:w-96 flex-shrink-0">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 sticky top-24">
-              {/* Tabs do painel */}
-              <div className="flex border-b border-gray-100 dark:border-gray-800">
-                {TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveTab(t.id)}
-                    className={`flex-1 py-3 text-sm font-semibold transition ${
-                      activeTab === t.id
-                        ? 'text-purple-600 border-b-2 border-purple-600'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="p-5 max-h-[calc(100vh-200px)] overflow-y-auto">
-                {activeTab === 'visual' && (
-                  <VisualEditor
-                    initialTheme={theme}
-                    onThemeChange={handleThemeChange}
-                    onSave={handleSave}
-                    saving={saving}
-                  />
-                )}
-                {activeTab === 'background' && (
-                  <BackgroundPicker
-                    currentBackground={theme.background}
-                    onSave={handleBackgroundSave}
-                  />
-                )}
-                {activeTab === 'templates' && (
-                  <div className="text-center py-6">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                      Explore todos os templates disponíveis
-                    </p>
-                    <Link
-                      href="/templates"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700 transition"
-                    >
-                      Ver galeria de templates
-                    </Link>
-                  </div>
-                )}
-              </div>
+      {/* Conteúdo Split Screen */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Editor - Lado Esquerdo */}
+          <div>
+            <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Editor Visual</h2>
+              <VisualEditor user={user} />
             </div>
+
+            {/* Background Picker - Tarefa 4 */}
+            <BackgroundPicker user={user} />
           </div>
 
-          {/* ── Preview em tempo real ── */}
-          <div className="flex-1 flex items-start justify-center">
-            <div className="w-full">
-              <p className="text-center text-sm text-gray-400 dark:text-gray-500 mb-6">
-                As alterações aparecem em tempo real →
-              </p>
-              <LivePreview theme={theme} links={links} user={session?.user} />
+          {/* Preview - Lado Direito */}
+          <div className="lg:sticky lg:top-8 h-fit">
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
+                <a
+                  href={`/${user.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 hover:text-purple-700 font-medium text-sm"
+                >
+                  Ver ao vivo →
+                </a>
+              </div>
+              
+              <ProfilePreview user={user} />
             </div>
           </div>
-
         </div>
       </div>
     </div>
   )
 }
 
-export default function EditPage() {
+// Componente de Preview do Perfil
+function ProfilePreview({ user }) {
+  const colors = {
+    primary: user.primaryColor || '#667eea',
+    secondary: user.secondaryColor || '#764ba2',
+    background: user.backgroundColor || '#f9fafb',
+    text: user.textColor || '#111827',
+  }
+
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600" />
+    <div
+      className="min-h-[600px] rounded-2xl p-8 space-y-6 overflow-hidden"
+      style={{
+        backgroundColor: colors.background,
+        backgroundImage: user.background ? `url(${user.background})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Avatar */}
+      <div className="text-center">
+        {user.image ? (
+          <img
+            src={user.image}
+            alt={user.name || user.username}
+            className="w-24 h-24 rounded-full mx-auto border-4"
+            style={{ borderColor: colors.primary }}
+          />
+        ) : (
+          <div
+            className="w-24 h-24 rounded-full mx-auto border-4 flex items-center justify-center text-4xl font-bold text-white"
+            style={{ backgroundColor: colors.primary, borderColor: colors.primary }}
+          >
+            {(user.name || user.username)?.[0]?.toUpperCase()}
+          </div>
+        )}
+        <h2
+          className="text-2xl font-bold mt-4"
+          style={{ color: colors.text }}
+        >
+          {user.name || user.username}
+        </h2>
+        {user.bio && (
+          <p
+            className="text-sm mt-2"
+            style={{ color: colors.text, opacity: 0.8 }}
+          >
+            {user.bio}
+          </p>
+        )}
       </div>
-    }>
-      <EditContent />
-    </Suspense>
+
+      {/* Links */}
+      <div className="space-y-3">
+        {user.links.map((link) => (
+          <a
+            key={link.id}
+            href="#"
+            className="block p-4 rounded-xl transition-all hover:scale-105"
+            style={{
+              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
+              color: 'white',
+              borderRadius: user.buttonStyle === 'rounded' ? '12px' : user.buttonStyle === 'square' ? '8px' : '12px',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              {link.icon && <span className="text-xl">{link.icon}</span>}
+              <span className="font-semibold">{link.title}</span>
+            </div>
+          </a>
+        ))}
+        
+        {user.links.length === 0 && (
+          <div
+            className="text-center py-12"
+            style={{ color: colors.text, opacity: 0.6 }}
+          >
+            <p>Nenhum link adicionado</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Componente de Background Picker - Tarefa 4
+async function BackgroundPicker({ user }) {
+  async function handleUpload(formData) {
+    'use server'
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return { error: 'Não autenticado' }
+    }
+
+    // TODO: Implementar upload para S3/Cloudflare R2
+    // Por enquanto, vamos usar URL direta
+    const backgroundUrl = formData.get('background')
+
+    if (backgroundUrl) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { background: backgroundUrl },
+      })
+    }
+
+    return { success: true }
+  }
+
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Background Personalizado</h3>
+      
+      <form action={handleUpload} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            URL da Imagem de Fundo
+          </label>
+          <input
+            type="url"
+            name="background"
+            defaultValue={user.background || ''}
+            placeholder="https://example.com/image.jpg"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+          />
+        </div>
+        
+        <button
+          type="submit"
+          className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Salvar Background
+        </button>
+      </form>
+
+      <div className="mt-4 pt-4 border-t">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Gradiente Pré-definido
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {['linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'].map((gradient, i) => (
+            <BackgroundGradientButton key={i} gradient={gradient} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BackgroundGradientButton({ gradient }) {
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        const session = await getServerSession(authOptions)
+        if (session?.user?.id) {
+          await prisma.user.update({
+            where: { id: session.user.id },
+            data: { background: gradient },
+          })
+        }
+      }}
+      className="h-20 rounded-lg border-2 border-gray-200 hover:border-purple-600 transition-all"
+      style={{ background: gradient }}
+    />
   )
 }

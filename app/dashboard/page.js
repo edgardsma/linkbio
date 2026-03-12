@@ -283,7 +283,7 @@ function DashboardContent() {
 
         {/* ── Banner de Upgrade ── */}
         {userProfile?.subscription && (
-          <UpgradeBanner currentPlan={userProfile.subscription.plan} />
+          <UpgradeBanner userPlan={userProfile.subscription.plan} />
         )}
 
         {/* ── Boas-vindas ── */}
