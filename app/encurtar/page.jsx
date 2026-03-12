@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 export default function ShortenPublicPage() {
@@ -12,6 +12,11 @@ export default function ShortenPublicPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(null)
   const [linksCreated, setLinksCreated] = useState(0)
+  const [origin, setOrigin] = useState('')
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   // Verificar limite de links (simulado - na prática viria do localStorage ou API)
   const checkLimit = () => {
@@ -180,7 +185,7 @@ export default function ShortenPublicPage() {
               </label>
               <div className="relative">
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-base font-medium">
-                  {window.location.origin}/s/
+                  {origin}/s/
                 </span>
                 <input
                   type="text"

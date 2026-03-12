@@ -5,12 +5,6 @@ import { logger } from '@/lib/logger'
 import { getRequestId } from '@/lib/middleware'
 import { createRateLimit } from '@/lib/rate-limit.js'
 
-const rateLimit = createRateLimit({
-  limit: 20,
-  window: 3600000, // 1 hora
-  prefix: 'shorten'
-})
-
 // Gerar slug aleatório
 function generateSlug(length = 6) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -43,12 +37,12 @@ export async function POST(request) {
 
     // Rate limiting por IP
     const identifier = request.headers.get('x-forwarded-for') || request.ip || 'unknown'
-    const rateLimitResult = rateLimit.check(identifier)
+    const rateLimitResult = createRateLimit.check(identifier)
     if (rateLimitResult.limited) {
       logger.warn('Rate limit atingido (encurtamento)', { requestId, identifier })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em 1 hora.' },
-        { status: 429, headers: rateLimitResult.getHeaders(rateLimitResult) }
+        { status: 429, headers: createRateLimit.getHeaders(rateLimitResult) }
       )
     }
 
