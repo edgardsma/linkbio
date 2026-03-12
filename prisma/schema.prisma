@@ -35,6 +35,7 @@ model User {
   subscription         Subscription?
   theme               Theme?        @relation(fields: [themeId], references: [id])
   passwordResetTokens PasswordResetToken[]
+  shortLinks          ShortLink[]
 }
 
 model Theme {
@@ -150,4 +151,35 @@ model PasswordResetToken {
 
   @@index([token])
   @@index([userId])
+}
+
+model ShortLink {
+  id          String          @id @default(cuid())
+  userId      String?
+  originalUrl String
+  slug        String          @unique
+  clicks      Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  clickLogs   ShortLinkClick[]
+  user        User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ShortLinkClick {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  userAgent   String?
+  referrer    String?
+  country     String?
+  device      String?
+  shortLinkId String
+  shortLink   ShortLink @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
+
+  @@index([shortLinkId])
+  @@index([createdAt])
+  @@index([shortLinkId, createdAt])
 }
