@@ -46,7 +46,8 @@ export default function UpgradeBanner({ currentPlan }) {
   const [dismissed, setDismissed] = useState(false)
   const [closing, setClosing] = useState(false)
 
-  if (currentPlan !== 'free' || dismissed) return null
+  // Mostrar se for plano free OU se não tiver plano (null/undefined)
+  if ((currentPlan && currentPlan !== 'free') || dismissed) return null
 
   const handleDismiss = () => {
     setClosing(true)
