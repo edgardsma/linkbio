@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Integração com Stripe - Guia Completo
 
 Este guia explica como configurar e utilizar o sistema de pagamentos com Stripe no LinkBio Brasil.

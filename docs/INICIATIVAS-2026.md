@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Iniciativas Implementadas - Março 2026
 
 Este documento detalha todas as melhorias e funcionalidades implementadas no projeto LinkBio Brasil em Março de 2026.

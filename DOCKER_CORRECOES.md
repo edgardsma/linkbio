@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # 🐳 Docker - Correções Implementadas
 
 **Data:** 03/03/2026

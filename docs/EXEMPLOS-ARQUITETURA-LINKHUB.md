@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Exemplos de Uso - Arquitetura LinkHub
 
 ## 📝 Como usar o Logger

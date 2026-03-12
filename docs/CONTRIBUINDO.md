@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Guia de Contribuição - LinkBio Brasil
 
 Bem-vindo ao projeto LinkBio Brasil! Agradecemos seu interesse em contribuir.

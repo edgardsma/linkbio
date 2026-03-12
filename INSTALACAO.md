@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Guia de Instalação Rápida - LinkBio Brasil
 
 Este guia vai ajudar você a configurar o LinkBio Brasil em poucos minutos.

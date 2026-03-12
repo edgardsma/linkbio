@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Comparação de Alterações - LinkBio Brasil
 
 **Data:** 05/03/2026

@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # 🚀 Instruções para Testes Manuais - LinkBio Brasil
 
 ## Status Preparado para Testes

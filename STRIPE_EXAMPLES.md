@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Exemplos de Uso - Integração Stripe
 
 Este documento contém exemplos práticos de como usar a integração com Stripe no projeto LinkBio Brasil.

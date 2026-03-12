@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # 📋 Documentação: Diagnóstico e Solução do Projeto LinkBio Brasil
 
 ## Resumo Executivo

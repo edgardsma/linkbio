@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Relatório de Validação de Estrutura - LinkBio Brasil
 
 Data: 03/03/2026

@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Integração Stripe - LinkBio Brasil
 
 Documentação completa para configurar e usar a integração com Stripe no projeto LinkBio Brasil.

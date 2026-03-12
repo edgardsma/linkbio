@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # 🚀 Iniciando os Testes - LinkBio Brasil
 
 ## 📋 Pré-requisitos

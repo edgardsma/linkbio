@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # Resumo de Implementação - Arquitetura LinkHub
 
 **Data:** 06/03/2026

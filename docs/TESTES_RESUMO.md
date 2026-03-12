@@ -1,3 +1,7 @@
+> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+
+---
+
 # 📊 Resumo da Infraestrutura de Testes
 
 ## ✅ MVP LinkBio Brasil - Pronto para Testes
