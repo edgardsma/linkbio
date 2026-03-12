@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { apiLogger } from '@/lib/logger'
@@ -20,7 +21,7 @@ const updateUserRoleSchema = z.object({
 })
 
 async function verifyAdmin(requestId: string) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     return { error: NextResponse.json({ error: 'Não autenticado' }, { status: 401 }), user: null }

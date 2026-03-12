@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma.js'
 import { getCached, setCached } from '@/lib/redis'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import Image from 'next/image'
+import LinkRenderer from '@/components/LinkRenderer'
 
 async function getUserProfile(username) {
   const cacheKey = `profile:${username}`
@@ -117,67 +117,17 @@ export default async function ProfilePage({ params }) {
           {user.links.length === 0 ? (
             <div
               className="text-center py-8"
-              style={{
-                color: themeColors.text,
-                opacity: 0.6,
-              }}
+              style={{ color: themeColors.text, opacity: 0.6 }}
             >
               <p>Este usuário ainda não adicionou links</p>
             </div>
           ) : (
             user.links.map((link) => (
-              <a
+              <LinkRenderer
                 key={link.id}
-                href={`/api/links/${link.id}/click?url=${encodeURIComponent(link.url)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 p-4"
-                style={{
-                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                }}
-              >
-                <div className="flex items-center gap-4">
-                  {link.icon && (
-                    <span className="text-2xl flex-shrink-0">{link.icon}</span>
-                  )}
-                  <div className="flex-grow min-w-0">
-                    <h3
-                      className="font-semibold text-lg"
-                      style={{
-                        color: '#ffffff',
-                      }}
-                    >
-                      {link.title}
-                    </h3>
-                    {link.description && (
-                      <p
-                        className="text-sm truncate"
-                        style={{
-                          color: 'rgba(255, 255, 255, 0.85)',
-                        }}
-                      >
-                        {link.description}
-                      </p>
-                    )}
-                  </div>
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    style={{
-                      color: 'rgba(255, 255, 255, 0.85)',
-                    }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </div>
-              </a>
+                link={link}
+                themeColors={themeColors}
+              />
             ))
           )}
         </div>

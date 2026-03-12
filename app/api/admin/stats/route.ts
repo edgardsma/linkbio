@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/prisma'
 import { apiLogger } from '@/lib/logger'
 import { getRequestId } from '@/lib/middleware'
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
   const requestId = getRequestId(request)
 
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma.js'
 import { logger, apiLogger, dbLogger } from '@/lib/logger'
 import { getRequestId, withRequestId } from '@/lib/middleware'
@@ -15,7 +16,7 @@ export async function GET(request) {
   try {
     apiLogger.info('Buscar perfil solicitado', { requestId })
 
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email) {
       apiLogger.warn('Usuário não autenticado', { requestId })
@@ -70,7 +71,7 @@ export async function PATCH(request) {
     try {
       apiLogger.info('Atualizar perfil solicitado', { requestId })
 
-      const session = await getServerSession()
+      const session = await getServerSession(authOptions)
 
       if (!session?.user?.email) {
         apiLogger.warn('Usuário não autenticado', { requestId })

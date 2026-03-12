@@ -3,6 +3,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/prisma'
 import { getDaysRemaining } from '@/lib/stripe-helpers'
 import SubscriptionBadge from '@/components/SubscriptionBadge'
+import StripePortalButton from '@/components/StripePortalButton'
 
 export const metadata = {
   title: 'Faturamento - LinkBio Brasil',
@@ -188,20 +189,7 @@ export default async function BillingPage() {
                     >
                       Alterar Plano
                     </a>
-                    <button
-                      onClick={async () => {
-                        const response = await fetch('/api/stripe/portal', {
-                          method: 'POST',
-                        })
-                        const data = await response.json()
-                        if (data.url) {
-                          window.location.href = data.url
-                        }
-                      }}
-                      className="block w-full py-3 px-4 bg-gray-100 text-gray-700 text-center rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                    >
-                      Gerenciar no Portal do Stripe
-                    </button>
+                    <StripePortalButton />
                     <a
                       href="/dashboard"
                       className="block w-full py-3 px-4 bg-transparent text-gray-600 text-center rounded-lg font-medium hover:text-gray-900 transition-colors"

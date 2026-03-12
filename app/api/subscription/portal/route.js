@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { createCustomerPortalSession } from '@/lib/stripe-helpers'
 import prisma from '@/lib/prisma'
 
@@ -9,7 +10,7 @@ import prisma from '@/lib/prisma'
  */
 export async function POST(request) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })

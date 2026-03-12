@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma.js'
 
 // Listar temas disponíveis
 export async function GET(request) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     // Buscar todos os temas
     const themes = await prisma.theme.findMany({

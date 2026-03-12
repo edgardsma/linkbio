@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 // Tipos
 export enum UserRole {
@@ -109,7 +110,7 @@ export function canPerformAction(
  */
 export function authorize(requiredRoles?: UserRole[]) {
   return async (request: NextRequest) => {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user) {
       return NextResponse.json(
@@ -144,7 +145,7 @@ export function authorize(requiredRoles?: UserRole[]) {
  * Helper para autenticação em API routes
  */
 export async function requireAuth(request: NextRequest): Promise<UserWithRole> {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     throw new Error('Não autenticado', { cause: 'AUTH_REQUIRED' })

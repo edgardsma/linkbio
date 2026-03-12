@@ -36,6 +36,11 @@ model User {
   theme               Theme?        @relation(fields: [themeId], references: [id])
   passwordResetTokens PasswordResetToken[]
   shortLinks          ShortLink[]
+  leads               Lead[]
+  bookingServices     BookingService[]
+  availabilities      Availability[]
+  bookings            Booking[]
+  googleCalendarToken String?
 }
 
 model Theme {
@@ -69,6 +74,7 @@ model Link {
   clicks      Int      @default(0)
   userId      String
   clickLogs   Click[]
+  leads       Lead[]
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -151,6 +157,86 @@ model PasswordResetToken {
 
   @@index([token])
   @@index([userId])
+}
+
+// ============================================================
+// AGENDAMENTO
+// ============================================================
+
+model BookingService {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  duration    Int       // minutos
+  price       Int       @default(0) // centavos (0 = gratuito)
+  currency    String    @default("BRL")
+  color       String    @default("#667eea")
+  isActive    Boolean   @default(true)
+  maxPerDay   Int       @default(10)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+
+  @@index([userId])
+}
+
+model Availability {
+  id        String  @id @default(cuid())
+  userId    String
+  dayOfWeek Int     // 0=Dom 1=Seg 2=Ter 3=Qua 4=Qui 5=Sex 6=Sab
+  startTime String  // "09:00"
+  endTime   String  // "18:00"
+  isActive  Boolean @default(true)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek])
+  @@index([userId])
+}
+
+model Booking {
+  id              String         @id @default(cuid())
+  userId          String
+  serviceId       String
+  guestName       String
+  guestEmail      String
+  guestPhone      String?
+  date            DateTime       // data do agendamento (sem hora)
+  startTime       String         // "14:00"
+  endTime         String         // "15:00"
+  status          String         @default("pending") // pending|confirmed|cancelled|completed
+  notes           String?
+  paymentId       String?
+  paymentMethod   String?
+  calendarEventId String?
+  cancelReason    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service         BookingService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+  @@index([userId, date])
+  @@index([guestEmail])
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  userId    String
+  linkId    String?
+  name      String?
+  email     String
+  phone     String?
+  message   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link      Link?    @relation(fields: [linkId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 model ShortLink {
