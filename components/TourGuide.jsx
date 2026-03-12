@@ -19,7 +19,7 @@ export default function TourGuide() {
   }, [])
 
   const startTour = () => {
-    const tour = driver({
+    const driverObj = driver({
       showProgress: true,
       stepsPerView: 3,
       prevBtnText: 'Anterior',
@@ -29,57 +29,56 @@ export default function TourGuide() {
       progressText: '{{current}} de {{total}}',
       overlayColor: 'rgba(0, 0, 0, 0.75)',
       popoverClass: 'tour-popover',
+      steps: [
+        {
+          element: '#tour-add-link',
+          popover: {
+            title: '🔗 Adicionar Link',
+            description: 'Clique aqui para adicionar seu primeiro link. Você pode adicionar Instagram, WhatsApp, YouTube e muito mais!',
+            side: 'bottom',
+            align: 'center',
+          },
+        },
+        {
+          element: '#tour-templates',
+          popover: {
+            title: '🎨 Templates Visuais',
+            description: 'Clique aqui para acessar a galeria de templates e escolher um visual profissional para sua página.',
+            side: 'bottom',
+            align: 'center',
+          },
+        },
+        {
+          element: '#tour-analytics',
+          popover: {
+            title: '📊 Analytics',
+            description: 'Acompanhe aqui quantos cliques seus links estão recebendo. Analytics detalhados disponíveis no plano Pro.',
+            side: 'top',
+            align: 'center',
+          },
+        },
+        {
+          element: '#tour-share-url',
+          popover: {
+            title: '📤 Compartilhar Perfil',
+            description: 'Copie sua URL pública e compartilhe no Instagram, TikTok, LinkedIn e outras redes sociais.',
+            side: 'top',
+            align: 'center',
+          },
+        },
+        {
+          element: '#tour-upgrade',
+          popover: {
+            title: '⭐ Upgrade para Pro',
+            description: 'Desbloqueie recursos avançados como analytics detalhados, links ilimitados e templates premium.',
+            side: 'left',
+            align: 'center',
+          },
+        },
+      ],
     })
 
-    tour.defineSteps([
-      {
-        element: '#tour-add-link',
-        popover: {
-          title: '🔗 Adicionar Link',
-          description: 'Clique aqui para adicionar seu primeiro link. Você pode adicionar Instagram, WhatsApp, YouTube e muito mais!',
-          side: 'bottom',
-          align: 'center',
-        },
-      },
-      {
-        element: '#tour-templates',
-        popover: {
-          title: '🎨 Templates Visuais',
-          description: 'Clique aqui para acessar a galeria de templates e escolher um visual profissional para sua página.',
-          side: 'bottom',
-          align: 'center',
-        },
-      },
-      {
-        element: '#tour-analytics',
-        popover: {
-          title: '📊 Analytics',
-          description: 'Acompanhe aqui quantos cliques seus links estão recebendo. Analytics detalhados disponíveis no plano Pro.',
-          side: 'top',
-          align: 'center',
-        },
-      },
-      {
-        element: '#tour-share-url',
-        popover: {
-          title: '📤 Compartilhar Perfil',
-          description: 'Copie sua URL pública e compartilhe no Instagram, TikTok, LinkedIn e outras redes sociais.',
-          side: 'top',
-          align: 'center',
-        },
-      },
-      {
-        element: '#tour-upgrade',
-        popover: {
-          title: '⭐ Upgrade para Pro',
-          description: 'Desbloqueie recursos avançados como analytics detalhados, links ilimitados e templates premium.',
-          side: 'left',
-          align: 'center',
-        },
-      },
-    ])
-
-    tour.drive()
+    driverObj.drive()
   }
 
   const dismissTour = () => {
