@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node scripts/dev-with-prisma.js",
     "dev:next-only": "next dev",
+    "dev:docker": "docker-compose -f docker-compose.dev.yml up -d",
+    "dev:docker-down": "docker-compose -f docker-compose.dev.yml down",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
