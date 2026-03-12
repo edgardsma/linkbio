@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LinkBio Brasil is a Brazilian link-in-bio platform (similar to Linktree) built with Next.js 16 App Router, Prisma ORM with PostgreSQL, and NextAuth.js for authentication. The project uses Portuguese as the primary language for all user-facing content.
+LinkBio Brasil is a Brazilian link-in-bio platform built with Next.js 16 App Router, Prisma ORM with PostgreSQL, and NextAuth.js for authentication. The project uses Portuguese as the primary language for all user-facing content.
 
 ## Recent Architecture Updates (March 2026)
 
@@ -94,7 +94,7 @@ app/                          # Next.js App Router
 ├── dashboard/                # User dashboard (client component)
 ├── profile/                  # Profile editing page
 ├── [username]/               # Public linkbio pages (dynamic route)
-├── linktree/                 # Alternative linktree-style pages
+├── links/[username]/         # Simplified link page style variant
 ├── links/[username]/         # Another link style variant
 └── layout.js                # Root layout with SessionProvider
 

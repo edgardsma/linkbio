@@ -1,5 +1,5 @@
 /**
- * Página de Links Simplificada - Estilo Linktree
+ * Página de Links Simplificada - Estilo LinkBio
  * Versão minimalista com cards de links em gradiente
  */
 
@@ -98,7 +98,7 @@ export default async function LinksPage({ params }) {
         )}
       </div>
 
-      {/* Links em cards estilo Linktree */}
+      {/* Links em cards estilo LinkBio */}
       <div className="container mx-auto px-4 py-12 max-w-lg">
         <div className="space-y-4">
           {user.links.length === 0 ? (

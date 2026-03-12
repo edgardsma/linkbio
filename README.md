@@ -34,7 +34,7 @@
 
 ## 🚀 Sobre o Projeto
 
-O **LinkBio Brasil** é uma plataforma completa para criação de páginas de links personalizadas, similar ao Linktree. Desenvolvido com tecnologias modernas, oferece uma experiência fluida e profissional para usuários que desejam compartilhar múltiplos links de forma organizada.
+O **LinkBio Brasil** é uma plataforma completa para criação de páginas de links personalizadas. Desenvolvido com tecnologias modernas, oferece uma experiência fluida e profissional para usuários que desejam compartilhar múltiplos links de forma organizada.
 
 ### Por que usar o LinkBio Brasil?
 
