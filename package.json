@@ -4,7 +4,8 @@
   "description": "Sua página de links personalizada - Crie e compartilhe todos os seus links em um único lugar!",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-with-prisma.js",
+    "dev:next-only": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
