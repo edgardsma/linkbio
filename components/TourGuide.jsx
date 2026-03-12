@@ -5,17 +5,14 @@ import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 
 export default function TourGuide() {
-  const [showTour, setShowTour] = useState(false)
+  const [showTour, setShowTour] = useState(true)
   const [tourDismissed, setTourDismissed] = useState(false)
 
   useEffect(() => {
     // Verificar se usuário já viu o tour
     const dismissed = localStorage.getItem('tour_dismissed')
-    if (!dismissed) {
-      // Mostrar botão de iniciar tour após um pequeno delay
-      setTimeout(() => setShowTour(true), 2000)
-    }
     setTourDismissed(!!dismissed)
+    console.log('TourGuide - dismissed:', !!dismissed)
   }, [])
 
   const startTour = () => {
