@@ -5,13 +5,6 @@ import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 
 export default function TourGuide() {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    console.log('TourGuide mounted!')
-    setMounted(true)
-  }, [])
-
   const startTour = () => {
     console.log('Starting tour...')
     const driverObj = driver({
@@ -75,8 +68,6 @@ export default function TourGuide() {
 
     driverObj.drive()
   }
-
-  if (!mounted) return null
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999]">
