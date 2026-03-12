@@ -164,7 +164,7 @@ export default function ProfilePage() {
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="@usuario"
                 required
-                pattern="^[a-zA-Z0-9_-]+$"
+                pattern="^[a-zA-Z0-9_\-]+$"
                 helperText="Apenas letras, números, hífens e sublinhados"
               />
 

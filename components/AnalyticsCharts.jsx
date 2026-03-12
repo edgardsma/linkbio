@@ -99,8 +99,8 @@ function LineChart({ data }) {
       </defs>
 
       {/* Grid */}
-      {yTicks.map((v) => (
-        <g key={v}>
+      {yTicks.map((v, i) => (
+        <g key={i}>
           <line
             x1={padL} y1={yOf(v)} x2={W - padR} y2={yOf(v)}
             stroke="#e5e7eb" strokeWidth="1"

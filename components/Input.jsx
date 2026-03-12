@@ -1,4 +1,4 @@
-export function Input({ label, error, className = '', ...props }) {
+export function Input({ label, error, helperText, className = '', ...props }) {
   return (
     <div className="space-y-1">
       {label && (
@@ -12,6 +12,9 @@ export function Input({ label, error, className = '', ...props }) {
       />
       {error && (
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      )}
+      {!error && helperText && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
       )}
     </div>
   )

@@ -87,6 +87,10 @@ export async function POST(request) {
       filename,
     })
   } catch (error) {
+    if (error.message === 'Não autenticado') {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
     authLogger.error('Error uploading avatar', {
       error: error.message,
       stack: error.stack,
