@@ -1,4 +1,4 @@
-> **Versão:** 1.1.1 | **Atualizado em:** 13/03/2026
+> **Versão:** 1.1.2 | **Atualizado em:** 13/03/2026
 
 ---
 
@@ -25,6 +25,9 @@ The project has been enhanced with a modern architecture following LinkHub patte
 - ✅ **Cupons** - Model Coupon no Prisma + API CRUD
 - ✅ **Chart.js** - Gráficos no painel admin (chart.js + react-chartjs-2)
 - ✅ **Proxy** - `middleware.ts` migrado para `proxy.ts` (Next.js 16)
+- ✅ **Configurações** - Página completa de configurações em `/dashboard/settings` (13/03/2026)
+- ✅ **BackButton** - Componente reutilizável de navegação com Tailwind CSS (13/03/2026)
+- ✅ **BlockedScreen** - Componente para contas suspensas com acessibilidade (13/03/2026)
 
 ### New Libraries:
 - `lib/logger.ts` - Structured logging with context
@@ -109,6 +112,9 @@ app/                          # Next.js App Router
 │   └── suporte/              # Overview de leads e agendamentos
 ├── auth/                     # Auth pages (login, signup)
 ├── dashboard/                # User dashboard (client component)
+│   ├── settings/            # User settings page (7 sections)
+│   ├── profile/             # Profile management page
+│   └── edit/               # Link editing page
 ├── profile/                  # Profile editing page
 ├── [username]/               # Public linkbio pages (dynamic route)
 ├── links/[username]/         # Simplified link page style variant
@@ -120,6 +126,8 @@ components/                   # React components (mostly client components)
 │   ├── AdminDashboardCharts.jsx  # Gráficos do dashboard (Chart.js)
 │   └── RevenuePlanChart.jsx  # Gráfico de receita por plano
 ├── SessionProvider.js        # NextAuth session wrapper (required in layout)
+├── BackButton.jsx           # Universal back navigation button (13/03/2026)
+├── BlockedScreen.jsx        # Suspended account screen (13/03/2026)
 ├── AnalyticsCharts.jsx       # Click statistics visualization
 ├── EditLinkModal.jsx        # Link editing modal
 ├── LinkTypeSelector.jsx      # Link type dropdown (URL, WhatsApp, Email, Phone)
