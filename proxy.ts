@@ -10,7 +10,7 @@
 import { getToken } from 'next-auth/jwt'
 import { NextRequest, NextResponse } from 'next/server'
 
-const ADMIN_PAGE_ROUTES = ['/dashboard/admin']
+const ADMIN_PAGE_ROUTES = ['/dashboard/admin', '/admin']
 const ADMIN_API_ROUTES = ['/api/admin']
 
 function isAdminPageRoute(pathname: string): boolean {
@@ -21,7 +21,7 @@ function isAdminApiRoute(pathname: string): boolean {
   return ADMIN_API_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'))
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Adicionar ou reutilizar request ID

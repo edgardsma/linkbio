@@ -33,6 +33,10 @@ export interface Permission {
   action: 'create' | 'read' | 'update' | 'delete' | 'admin'
 }
 
+// Wrapper que resolve incompatibilidade de tipos do authOptions (JS → TS)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getSession = () => getServerSession(authOptions as any) as Promise<{ user?: UserWithRole } | null>
+
 /**
  * Mapa de recursos para roles
  */
@@ -110,7 +114,7 @@ export function canPerformAction(
  */
 export function authorize(requiredRoles?: UserRole[]) {
   return async (request: NextRequest) => {
-    const session = await getServerSession(authOptions)
+    const session = await getSession()
 
     if (!session?.user) {
       return NextResponse.json(
@@ -145,7 +149,7 @@ export function authorize(requiredRoles?: UserRole[]) {
  * Helper para autenticação em API routes
  */
 export async function requireAuth(request: NextRequest): Promise<UserWithRole> {
-  const session = await getServerSession(authOptions)
+  const session = await getSession()
 
   if (!session?.user) {
     throw new Error('Não autenticado', { cause: 'AUTH_REQUIRED' })

@@ -1,4 +1,4 @@
-> **Versão:** 1.0.0 | **Atualizado em:** 12/03/2026
+> **Versão:** 1.1.0 | **Atualizado em:** 13/03/2026
 
 ---
 
@@ -21,6 +21,10 @@ The project has been enhanced with a modern architecture following LinkHub patte
 - ✅ **Observabilidade** - Structured logging, request tracking, performance monitoring, health checks
 - ✅ **Redis Cache** - Client configured with rate limiting and cache helpers
 - ✅ **RBAC** - Role-based access control (USER, ADMIN, AGENCY roles)
+- ✅ **Painel Admin** - Painel administrativo completo em `/admin` (13/03/2026)
+- ✅ **Cupons** - Model Coupon no Prisma + API CRUD
+- ✅ **Chart.js** - Gráficos no painel admin (chart.js + react-chartjs-2)
+- ✅ **Proxy** - `middleware.ts` migrado para `proxy.ts` (Next.js 16)
 
 ### New Libraries:
 - `lib/logger.ts` - Structured logging with context
@@ -86,19 +90,35 @@ docker-compose -f docker-compose.dev.yml down
 app/                          # Next.js App Router
 ├── api/                      # API Routes (JavaScript/TypeScript mixed)
 │   ├── auth/[...nextauth]/   # NextAuth configuration
+│   ├── admin/                # Admin APIs (stats, users, subscriptions, plans, coupons, payments)
 │   ├── links/                # Link CRUD operations
 │   ├── profile/              # Profile operations
 │   ├── stripe/               # Stripe payment integration
 │   └── health/               # Health check (uses new observability)
+├── admin/                    # Painel administrativo (role=admin apenas)
+│   ├── layout.jsx            # Shell: sidebar + topbar (server component, auth guard)
+│   ├── admin.css             # CSS completo do painel admin
+│   ├── page.jsx              # Dashboard com stats e gráficos
+│   ├── usuarios/             # Gerenciamento de usuários
+│   ├── assinaturas/          # Assinaturas por status/plano
+│   ├── contas/               # Contas agency
+│   ├── financeiro/           # Histórico financeiro
+│   ├── receita/              # MRR/ARR/receita por plano
+│   ├── planos/               # Configuração dos planos
+│   ├── cupons/               # CRUD de cupons de desconto
+│   └── suporte/              # Overview de leads e agendamentos
 ├── auth/                     # Auth pages (login, signup)
 ├── dashboard/                # User dashboard (client component)
 ├── profile/                  # Profile editing page
 ├── [username]/               # Public linkbio pages (dynamic route)
 ├── links/[username]/         # Simplified link page style variant
-├── links/[username]/         # Another link style variant
-└── layout.js                # Root layout with SessionProvider
+└── layout.js                 # Root layout with SessionProvider
 
 components/                   # React components (mostly client components)
+├── admin/                    # Componentes do painel admin
+│   ├── AdminSidebar.jsx      # Sidebar com navegação (client, usePathname)
+│   ├── AdminDashboardCharts.jsx  # Gráficos do dashboard (Chart.js)
+│   └── RevenuePlanChart.jsx  # Gráfico de receita por plano
 ├── SessionProvider.js        # NextAuth session wrapper (required in layout)
 ├── AnalyticsCharts.jsx       # Click statistics visualization
 ├── EditLinkModal.jsx        # Link editing modal
@@ -258,6 +278,9 @@ Required variables are in `.env.example`. Critical ones:
 - **NEW**: The project now supports structured logging, caching, RBAC, rate limiting, and performance tracking
 - **NEW**: Tests are implemented across unit, integration, and E2E levels using Jest and Playwright
 - **NEW**: CI/CD is configured but needs GitHub secrets to be set up
+- **NEW (13/03)**: Painel admin completo em `/admin` com sidebar, gráficos (Chart.js), CRUD de cupons e 9 seções
+- **NEW (13/03)**: `middleware.ts` migrado para `proxy.ts` (convenção Next.js 16)
+- **NEW (13/03)**: Model `Coupon` adicionado ao schema Prisma
 
 ## Quick Start
 

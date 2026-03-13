@@ -16,14 +16,14 @@ export async function GET(request: NextRequest) {
   const requestId = getRequestId(request)
 
   try {
-    const session = await getServerSession(authOptions)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const session = await getServerSession(authOptions as any) as { user?: { role?: string } } | null
 
     if (!session?.user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
-    const sessionUser = session.user as { role?: string }
-    if (sessionUser.role !== 'admin') {
+    if (session.user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 

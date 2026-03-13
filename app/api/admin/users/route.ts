@@ -21,13 +21,14 @@ const updateUserRoleSchema = z.object({
 })
 
 async function verifyAdmin(requestId: string) {
-  const session = await getServerSession(authOptions)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const session = await getServerSession(authOptions as any) as { user?: { role?: string; id?: string } } | null
 
   if (!session?.user) {
     return { error: NextResponse.json({ error: 'Não autenticado' }, { status: 401 }), user: null }
   }
 
-  const user = session.user as { role?: string; id?: string }
+  const user = session.user
   if (user.role !== 'admin') {
     return { error: NextResponse.json({ error: 'Não autorizado' }, { status: 403 }), user: null }
   }

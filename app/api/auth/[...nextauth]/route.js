@@ -109,12 +109,28 @@ const authOptions = {
         token.id = user.id
         token.username = user.username
       }
+      // Always refresh role from DB on each JWT refresh to pick up role changes
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { role: true, username: true },
+          })
+          if (dbUser) {
+            token.role = dbUser.role
+            token.username = dbUser.username
+          }
+        } catch {
+          // silently ignore DB errors during token refresh
+        }
+      }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id
         session.user.username = token.username
+        session.user.role = token.role
       }
       return session
     },
