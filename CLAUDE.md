@@ -1,4 +1,4 @@
-> **Versão:** 1.1.0 | **Atualizado em:** 13/03/2026
+> **Versão:** 1.1.1 | **Atualizado em:** 13/03/2026
 
 ---
 
@@ -281,6 +281,7 @@ Required variables are in `.env.example`. Critical ones:
 - **NEW (13/03)**: Painel admin completo em `/admin` com sidebar, gráficos (Chart.js), CRUD de cupons e 9 seções
 - **NEW (13/03)**: `middleware.ts` migrado para `proxy.ts` (convenção Next.js 16)
 - **NEW (13/03)**: Model `Coupon` adicionado ao schema Prisma
+- **NEW (13/03)**: Removida página `faturamento` órfã (substituída por `receita`); `playwright-report/` e `test-results/` adicionados ao `.gitignore`
 
 ## Quick Start
 
