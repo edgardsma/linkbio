@@ -1,6 +1,7 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
+import BlockedScreen from '@/components/BlockedScreen'
 import { Suspense, useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import AnalyticsCharts from '@/components/AnalyticsCharts'
@@ -60,6 +61,12 @@ const IconSignOut = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+  </svg>
+)
+const IconSettings = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M12 15a3 3 0 100-6 3 3 0 000 6zm0-10a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zm0-10a3 3 0 100-6 3 3 0 000 6zM18 15a3 3 0 100-6 3 3 0 000 6zm0-10a3 3 0 100-6 3 3 0 000 6z" />
   </svg>
 )
 
@@ -183,6 +190,10 @@ function DashboardContent() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  if (session?.user?.blocked) {
+    return <BlockedScreen />
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -249,6 +260,12 @@ function DashboardContent() {
               className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition font-medium"
             >
               Planos
+            </Link>
+            <Link
+              href="/dashboard/settings"
+              className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition font-medium"
+            >
+              ⚙️ Configurações
             </Link>
             <Link
               href={profileUrl}
